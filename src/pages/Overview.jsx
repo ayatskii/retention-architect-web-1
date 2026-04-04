@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   TrendingDown, TrendingUp, Users, CheckCircle2, Clock3,
   Eye, AlertTriangle, Zap, Search, XCircle, CreditCard,
-  Activity, Shield, Check, ArrowRight,
+  Activity, Shield, Check, ArrowRight, FileDown,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
@@ -151,11 +151,17 @@ export default function Overview() {
 
   // PM tasks state
   const [tasks, setTasks] = useState([
-    { id: 1, done: false },
-    { id: 2, done: false },
-    { id: 3, done: false },
+    { id: 1, done: false, exporting: false, exported: false },
+    { id: 2, done: false, exporting: false, exported: false },
+    { id: 3, done: false, exporting: false, exported: false },
   ])
   const markDone = (id) => setTasks(ts => ts.map(tk => tk.id === id ? { ...tk, done: !tk.done } : tk))
+  const exportPdf = useCallback(async (id) => {
+    setTasks(ts => ts.map(tk => tk.id === id ? { ...tk, exporting: true } : tk))
+    await new Promise(r => setTimeout(r, 1400))
+    setTasks(ts => ts.map(tk => tk.id === id ? { ...tk, exporting: false, exported: true } : tk))
+    setTimeout(() => setTasks(ts => ts.map(tk => tk.id === id ? { ...tk, exported: false } : tk)), 2800)
+  }, [])
 
   // Deep Scan state
   const [query, setQuery] = useState('')
@@ -339,7 +345,10 @@ export default function Overview() {
             style={{ '--divider': isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
             {taskDefs.map((task, i) => {
               const Icon = task.icon
-              const isDone = tasks.find(tk => tk.key === task.key)?.done ?? false
+              const taskState = tasks.find(tk => tk.id === task.key) ?? {}
+              const isDone = taskState.done ?? false
+              const isExporting = taskState.exporting ?? false
+              const isExported  = taskState.exported  ?? false
               return (
                 <motion.div
                   key={task.key}
@@ -402,11 +411,30 @@ export default function Overview() {
                       className={clsx(
                         'text-xs font-bold px-3 py-2 rounded-lg transition-all duration-200',
                         isDone
-                          ? isDark ? 'text-white/25 bg-white/05' : 'text-black/25 bg-black/05'
+                          ? isDark ? 'text-white/25 bg-white/[0.05]' : 'text-black/25 bg-black/[0.05]'
                           : 'text-black bg-[#ccff00] hover:shadow-[0_0_12px_rgba(204,255,0,0.4)]',
                       )}
                     >
                       {isDone ? '✓' : t.tasks.markDone}
+                    </button>
+                    <button
+                      onClick={() => exportPdf(task.key)}
+                      disabled={isExporting || isExported}
+                      className={clsx(
+                        'flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg transition-all duration-200 border',
+                        isExported
+                          ? 'text-black border-transparent'
+                          : isDark
+                            ? 'text-white/40 border-white/[0.1] hover:text-white hover:border-white/30'
+                            : 'text-black/40 border-black/[0.1] hover:text-black hover:border-black/30',
+                      )}
+                      style={isExported ? { background: '#ccff00', boxShadow: '0 0 10px rgba(204,255,0,0.35)' } : {}}
+                    >
+                      {isExporting
+                        ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
+                            className="w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
+                        : <FileDown size={12} />}
+                      {isExported ? t.tasks.exported : isExporting ? t.tasks.exporting : t.tasks.exportPdf}
                     </button>
                     <button className={clsx('text-xs font-semibold flex items-center gap-1 px-2 py-2', isDark ? 'text-white/30 hover:text-white' : 'text-black/30 hover:text-black')}>
                       {t.tasks.viewDetails} <ArrowRight size={11} />

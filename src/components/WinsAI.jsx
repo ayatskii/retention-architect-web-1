@@ -1,0 +1,441 @@
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Send, Zap, Trash2, ChevronDown, Bot, User } from 'lucide-react'
+import { useI18n } from '../context/I18nContext'
+import { useTheme } from '../context/ThemeContext'
+import { clsx } from 'clsx'
+
+// ── Typing dots animation ───────────────────────
+function ThinkingDots() {
+  return (
+    <div className="flex items-center gap-1 px-4 py-3">
+      {[0, 1, 2].map(i => (
+        <motion.div
+          key={i}
+          className="w-2 h-2 rounded-full"
+          style={{ background: '#ccff00' }}
+          animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18 }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Single message bubble ───────────────────────
+function Message({ msg, t, isDark }) {
+  const isAI = msg.role === 'ai'
+  const [execDone, setExecDone] = useState(false)
+  const [reportDone, setReportDone] = useState(false)
+
+  const handleExec = () => {
+    setExecDone(true)
+    setTimeout(() => setExecDone(false), 3000)
+  }
+  const handleReport = () => {
+    setReportDone(true)
+    setTimeout(() => setReportDone(false), 3000)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      className={clsx('flex gap-2.5', isAI ? 'items-start' : 'items-start flex-row-reverse')}
+    >
+      {/* Avatar */}
+      <div className={clsx(
+        'flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[0.6rem] font-black',
+        isAI
+          ? 'text-black'
+          : isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60',
+      )}
+        style={isAI ? { background: '#ccff00', boxShadow: '0 0 8px rgba(204,255,0,0.4)' } : {}}
+      >
+        {isAI ? <Zap size={12} strokeWidth={3} /> : <User size={12} />}
+      </div>
+
+      <div className={clsx('flex flex-col gap-2 max-w-[82%]', !isAI && 'items-end')}>
+        {/* Bubble */}
+        <div
+          className={clsx(
+            'rounded-2xl px-4 py-3 text-xs leading-relaxed',
+            isAI
+              ? isDark
+                ? 'bg-[rgba(204,255,0,0.07)] border border-[rgba(204,255,0,0.15)] text-white/80'
+                : 'bg-[rgba(100,163,13,0.08)] border border-[rgba(100,163,13,0.2)] text-black/70'
+              : isDark
+                ? 'bg-white/[0.07] border border-white/[0.1] text-white/80'
+                : 'bg-black/[0.06] border border-black/[0.08] text-black/70',
+          )}
+        >
+          {msg.content}
+
+          {/* Suggestion quick replies */}
+          {msg.isSuggestion && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                onClick={() => msg.onSuggestionClick?.(msg.content)}
+                className="text-[0.58rem] font-bold px-2 py-1 rounded-lg transition-colors"
+                style={{ background: 'rgba(204,255,0,0.15)', color: '#ccff00', border: '1px solid rgba(204,255,0,0.25)' }}
+              >
+                Ask about this ›
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* AI action buttons */}
+        {isAI && msg.showActions && (
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleExec}
+              className={clsx(
+                'flex items-center gap-1.5 text-[0.62rem] font-bold px-3 py-1.5 rounded-lg transition-all duration-200',
+                execDone
+                  ? 'text-black'
+                  : 'hover:opacity-80',
+              )}
+              style={{
+                background: execDone ? '#ccff00' : 'rgba(204,255,0,0.15)',
+                color: execDone ? '#000' : '#ccff00',
+                border: '1px solid rgba(204,255,0,0.3)',
+                boxShadow: execDone ? '0 0 12px rgba(204,255,0,0.4)' : 'none',
+              }}
+            >
+              <Zap size={10} strokeWidth={3} />
+              {execDone ? '✓ Executed' : t.ai.executeStrategy}
+            </button>
+            <button
+              onClick={handleReport}
+              className={clsx(
+                'flex items-center gap-1.5 text-[0.62rem] font-bold px-3 py-1.5 rounded-lg transition-all duration-200',
+              )}
+              style={{
+                background: reportDone
+                  ? (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)')
+                  : 'transparent',
+                color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+              }}
+            >
+              {reportDone ? '✓ Sent' : t.ai.sendReport}
+            </button>
+          </div>
+        )}
+
+        {/* Timestamp */}
+        <span className={clsx('text-[0.52rem] px-1', isDark ? 'text-white/20' : 'text-black/25')}>
+          {msg.time}
+        </span>
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Main Chat Widget ────────────────────────────
+export default function WinsAI() {
+  const { t, lang } = useI18n()
+  const { isDark } = useTheme()
+  const [open, setOpen] = useState(false)
+  const [minimized, setMinimized] = useState(false)
+  const [input, setInput] = useState('')
+  const [thinking, setThinking] = useState(false)
+  const [msgIdx, setMsgIdx] = useState(0)
+  const [messages, setMessages] = useState([])
+  const bottomRef = useRef(null)
+  const inputRef = useRef(null)
+
+  const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  // Build initial suggestion messages whenever language changes
+  useEffect(() => {
+    const suggestions = (t.ai.suggestions || []).map((s, i) => ({
+      id: `sug-${i}`,
+      role: 'ai',
+      content: s,
+      time: now(),
+      isSuggestion: true,
+      showActions: false,
+      onSuggestionClick: (txt) => handleSend(txt),
+    }))
+    setMessages(suggestions)
+    setMsgIdx(0)
+  }, [lang])
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, thinking])
+
+  // Focus input when opened
+  useEffect(() => {
+    if (open && !minimized) {
+      setTimeout(() => inputRef.current?.focus(), 160)
+    }
+  }, [open, minimized])
+
+  const addMessage = useCallback((msg) => {
+    setMessages(prev => [...prev, { id: Date.now(), time: now(), ...msg }])
+  }, [])
+
+  const handleSend = useCallback(async (text) => {
+    const msg = (text || input).trim()
+    if (!msg || thinking) return
+    setInput('')
+
+    addMessage({ role: 'user', content: msg })
+    setThinking(true)
+
+    // Check for real OpenAI key
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+    const model  = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
+    const maxTok = parseInt(import.meta.env.VITE_OPENAI_MAX_TOKENS || '200')
+
+    if (apiKey && apiKey !== 'sk-proj-...') {
+      // ── Real OpenAI call ──────────────────────
+      try {
+        const systemPrompt = `You are Wins AI, an expert retention analytics advisor for a SaaS product.
+          You help Product Managers understand churn patterns, recommend interventions, and analyse user risk.
+          Keep responses concise (2-3 sentences max). Language: ${lang}.`
+
+        const history = messages
+          .filter(m => !m.isSuggestion)
+          .slice(-6)
+          .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }))
+
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: maxTok,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...history,
+              { role: 'user', content: msg },
+            ],
+          }),
+        })
+
+        const data = await res.json()
+        const aiText = data.choices?.[0]?.message?.content || 'I could not process that. Please try again.'
+        addMessage({ role: 'ai', content: aiText, showActions: true })
+      } catch {
+        addMessage({
+          role: 'ai',
+          content: 'API connection failed. Check your VITE_OPENAI_API_KEY in .env.',
+          showActions: false,
+        })
+      }
+    } else {
+      // ── Mock response ─────────────────────────
+      await new Promise(r => setTimeout(r, 850 + Math.random() * 400))
+      const responses = t.ai.mockResponses || []
+      const reply = responses[msgIdx % responses.length] ||
+        "I've analysed your query. Would you like me to run a deeper diagnostic scan?"
+      setMsgIdx(i => i + 1)
+      addMessage({ role: 'ai', content: reply, showActions: true })
+    }
+
+    setThinking(false)
+  }, [input, thinking, messages, msgIdx, t, lang, addMessage])
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+  }
+
+  const clearChat = () => {
+    const suggestions = (t.ai.suggestions || []).map((s, i) => ({
+      id: `sug-${i}`, role: 'ai', content: s, time: now(),
+      isSuggestion: true, showActions: false,
+    }))
+    setMessages(suggestions)
+    setMsgIdx(0)
+  }
+
+  return (
+    <>
+      {/* ── Floating toggle button (always visible) ── */}
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            key="fab"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+            onClick={() => setOpen(true)}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl text-black text-sm font-black shadow-2xl"
+            style={{
+              background: '#ccff00',
+              boxShadow: '0 0 24px rgba(204,255,0,0.55), 0 0 48px rgba(204,255,0,0.25), 0 4px 24px rgba(0,0,0,0.4)',
+            }}
+            aria-label={t.ai.open}
+          >
+            {/* Pulse ring */}
+            <span className="relative flex-shrink-0">
+              <span className="absolute inset-0 rounded-full animate-ping"
+                style={{ background: 'rgba(204,255,0,0.4)' }} />
+              <Zap size={16} strokeWidth={3} className="relative" />
+            </span>
+            {t.ai.title}
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* ── Chat Panel ── */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="panel"
+            initial={{ opacity: 0, scale: 0.9, y: 20, originX: 1, originY: 1 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[400px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+            style={{
+              maxHeight: minimized ? 'auto' : '560px',
+              border: '1px solid rgba(204,255,0,0.3)',
+              boxShadow: '0 0 40px rgba(204,255,0,0.12), 0 0 80px rgba(204,255,0,0.06), 0 20px 60px rgba(0,0,0,0.5)',
+              background: isDark ? 'rgba(6,6,6,0.97)' : 'rgba(252,252,252,0.97)',
+              backdropFilter: 'blur(24px)',
+            }}
+          >
+            {/* ── Header ── */}
+            <div
+              className="flex items-center gap-3 px-4 py-3.5 border-b flex-shrink-0"
+              style={{ borderColor: 'rgba(204,255,0,0.15)', background: 'rgba(204,255,0,0.05)' }}
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: '#ccff00', boxShadow: '0 0 12px rgba(204,255,0,0.5)' }}>
+                <Zap size={14} color="#000" strokeWidth={3} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black leading-none" style={{ color: '#ccff00' }}>
+                  {t.ai.title}
+                </p>
+                <p className={clsx('text-[0.58rem] mt-0.5', isDark ? 'text-white/35' : 'text-black/40')}>
+                  {t.ai.subtitle}
+                </p>
+              </div>
+
+              {/* Live indicator */}
+              <div className="flex items-center gap-1.5 mr-1">
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: '#ccff00', boxShadow: '0 0 4px #ccff00' }} />
+                <span className="text-[0.52rem] font-bold" style={{ color: '#ccff00' }}>LIVE</span>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center gap-1">
+                <button onClick={clearChat}
+                  className={clsx('w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+                    isDark ? 'text-white/25 hover:text-white/60 hover:bg-white/05' : 'text-black/25 hover:text-black/60 hover:bg-black/05')}>
+                  <Trash2 size={13} />
+                </button>
+                <button onClick={() => setMinimized(v => !v)}
+                  className={clsx('w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+                    isDark ? 'text-white/25 hover:text-white/60 hover:bg-white/05' : 'text-black/25 hover:text-black/60 hover:bg-black/05')}>
+                  <ChevronDown size={13} className={clsx('transition-transform', minimized && 'rotate-180')} />
+                </button>
+                <button onClick={() => setOpen(false)}
+                  className={clsx('w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+                    isDark ? 'text-white/25 hover:text-white/60 hover:bg-white/05' : 'text-black/25 hover:text-black/60 hover:bg-black/05')}>
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+
+            {/* ── Messages ── */}
+            <AnimatePresence initial={false}>
+              {!minimized && (
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: 'auto' }}
+                  exit={{ height: 0 }}
+                  className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
+                  style={{ maxHeight: '360px' }}
+                >
+                  {messages.map(msg => (
+                    <Message key={msg.id} msg={msg} t={t} isDark={isDark} />
+                  ))}
+
+                  {/* Thinking indicator */}
+                  <AnimatePresence>
+                    {thinking && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        className="flex items-center gap-2.5"
+                      >
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: '#ccff00' }}>
+                          <Zap size={12} color="#000" strokeWidth={3} />
+                        </div>
+                        <div className="rounded-2xl border"
+                          style={{
+                            background: isDark ? 'rgba(204,255,0,0.07)' : 'rgba(100,163,13,0.08)',
+                            borderColor: isDark ? 'rgba(204,255,0,0.15)' : 'rgba(100,163,13,0.2)',
+                          }}>
+                          <ThinkingDots />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div ref={bottomRef} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── Input ── */}
+            {!minimized && (
+              <div className="flex-shrink-0 border-t px-3 py-3"
+                style={{ borderColor: 'rgba(204,255,0,0.1)' }}>
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t.ai.placeholder}
+                    className={clsx(
+                      'flex-1 resize-none rounded-xl px-3 py-2.5 text-xs outline-none transition-all duration-200 leading-relaxed',
+                      isDark
+                        ? 'bg-white/[0.04] text-white placeholder-white/25 border border-white/[0.08]'
+                        : 'bg-black/[0.04] text-black placeholder-black/30 border border-black/[0.08]',
+                    )}
+                    style={{ maxHeight: '80px' }}
+                    onFocus={e => { e.target.style.borderColor = 'rgba(204,255,0,0.4)' }}
+                    onBlur={e => { e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+                  />
+                  <motion.button
+                    onClick={() => handleSend()}
+                    disabled={!input.trim() || thinking}
+                    whileTap={{ scale: 0.93 }}
+                    className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-35 disabled:cursor-not-allowed"
+                    style={{ background: '#ccff00', boxShadow: '0 0 12px rgba(204,255,0,0.35)' }}
+                  >
+                    <Send size={14} color="#000" strokeWidth={2.5} />
+                  </motion.button>
+                </div>
+                <p className={clsx('text-[0.52rem] mt-2 text-center', isDark ? 'text-white/15' : 'text-black/20')}>
+                  {import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'sk-proj-...'
+                    ? t.ai.poweredBy
+                    : t.ai.mockApiNote}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}

@@ -1,6 +1,6 @@
 export const translations = {
+  // ═══════════════════════════════════════════════
   EN: {
-    // Nav
     nav: {
       brand: 'WINS',
       overview: 'Overview',
@@ -8,7 +8,6 @@ export const translations = {
       strategyLab: 'Strategy Lab',
     },
 
-    // Hero
     hero: {
       badge: 'Priority Intervention',
       badgeSub: 'Engine Active · 3 models running',
@@ -21,10 +20,9 @@ export const translations = {
       engineHealthVal: '99.98% uptime',
     },
 
-    // PM Tasks
     tasks: {
-      title: "PM Priority Tasks",
-      sub: "Wins engine recommendations — act within 24h",
+      title: 'PM Priority Tasks',
+      sub: 'Wins engine recommendations — act within 24h',
       task1Title: 'Fix 3DS Failures',
       task1Sub: '8,200 users blocked by payment auth. Estimated $1.2M recovery.',
       task1Tag: 'CRITICAL',
@@ -36,9 +34,11 @@ export const translations = {
       task3Tag: 'REVIEW',
       markDone: 'Mark done',
       viewDetails: 'Details',
+      exportPdf: 'Export PDF',
+      exporting: 'Exporting…',
+      exported: '✓ Done',
     },
 
-    // Charts
     charts: {
       churnDriversTitle: 'Churn Drivers Analysis',
       churnDriversSub: 'Average active days before churn event',
@@ -49,7 +49,6 @@ export const translations = {
       avgDays: 'avg days',
     },
 
-    // Deep Scan
     scan: {
       title: 'Deep Scan',
       sub: 'Instant root-cause analysis on any subscriber',
@@ -66,57 +65,100 @@ export const translations = {
       churnRisk: 'churn risk',
     },
 
-    // Strategy Lab
+    // ── Wins AI Chat Widget ──────────────────────
+    ai: {
+      title: 'Wins AI',
+      subtitle: 'Your Retention Advisor',
+      placeholder: 'Ask about retention…',
+      thinking: 'Wins AI is thinking…',
+      executeStrategy: 'Execute Strategy',
+      sendReport: 'Send Report',
+      dismiss: 'Dismiss',
+      open: 'Open Wins AI',
+      close: 'Close',
+      clearChat: 'Clear chat',
+      poweredBy: 'Powered by GPT-4o',
+      mockApiNote: 'Connect OpenAI key in .env for live responses',
+      suggestions: [
+        '3DS anomaly detected in Brazil — 2,100 users blocked by auth failure',
+        'Grace period recommended for 6,400 active users with payment failures',
+        'Voluntary churn spike in Starter tier — educational sequence ready to deploy',
+      ],
+      mockResponses: [
+        "I've analysed the 3DS failure pattern. Root cause: Visa authentication timeout in BRL transactions. Recommend immediate retry with 3DS v2 bypass for low-risk users. Projected recovery: $840K.",
+        "Grace period for 6,400 active users is now live. The 72-hour window activated at 09:14 UTC. Recovery rate projected at +31% based on historical cohort data. Shall I notify the CSM team?",
+        "Educational sequence for 14,300 Starter users is queued. 7 touchpoints over 14 days — feature discovery → live demo → 1:1 CSM offer. Estimated voluntary churn reduction: −18%. Deploy now?",
+      ],
+    },
+
+    // ── Diagnostics Page ────────────────────────
+    diagnostics: {
+      title: 'Diagnostics',
+      sub: 'Model performance metrics & user risk intelligence',
+      modelHealth: 'Model Health',
+      modelHealthSub: 'Live churn prediction engine metrics',
+      f1Score: 'F1 Score',
+      precision: 'Precision',
+      recall: 'Recall',
+      confidence: 'Confidence',
+      aucRoc: 'AUC-ROC',
+      lastRetrain: 'Last Retrain',
+      lastRetrainVal: '4 hours ago',
+      trainingSize: 'Training Set',
+      trainingSizeVal: '284K samples',
+      scatterTitle: 'User Risk Clusters',
+      scatterSub: 'Activity days vs. payment attempts — dot size = LTV',
+      activityDays: 'Activity Days',
+      paymentAttempts: 'Payment Attempts',
+      healthy: 'Healthy',
+      involuntary: 'Involuntary Churn',
+      voluntary: 'Voluntary Churn',
+      ltv: 'LTV Score',
+      usersInCluster: 'users in cluster',
+      tooltipActivity: 'Activity:',
+      tooltipPayments: 'Payments:',
+      tooltipLtv: 'LTV:',
+      riskIndex: 'Risk Index',
+      anomalyFeed: 'Live Anomaly Feed',
+      anomalyFeedSub: 'Real-time signals from the detection pipeline',
+    },
+
     strategy: {
       title: 'Strategy Lab',
       sub: 'Team Wins long-term retention architecture',
       card1Title: 'Smart Grace Period Protocol',
       card1Sub: 'Automatic 72-hour safety net for active users with payment failures',
       card1Desc: 'When a payment fails for an active user, instead of immediately locking access, the engine grants a 72h grace window. During this period automated retry attempts occur at optimal timezone-aware intervals, dramatically reducing involuntary churn.',
-      card1Stat1Label: 'Grace Window',
-      card1Stat1Val: '72 Hours',
-      card1Stat2Label: 'Recovery Rate',
-      card1Stat2Val: '+31%',
-      card1Stat3Label: 'Users Protected',
-      card1Stat3Val: '6,400',
-
+      card1Stat1Label: 'Grace Window', card1Stat1Val: '72 Hours',
+      card1Stat2Label: 'Recovery Rate', card1Stat2Val: '+31%',
+      card1Stat3Label: 'Users Protected', card1Stat3Val: '6,400',
       card2Title: 'Dunning Logic Optimization',
       card2Sub: 'Intelligent payment retry sequences based on user timezone & behaviour',
       card2Desc: 'Standard dunning retries payments at fixed intervals. Our model uses behavioural data (last-login timezone, average session time) to schedule retries when users are most likely online and card processors least likely to decline.',
-      card2Stat1Label: 'Retry Window',
-      card2Stat1Val: '6 Slots/Day',
-      card2Stat2Label: 'Success Lift',
-      card2Stat2Val: '+22%',
-      card2Stat3Label: 'Timezones Covered',
-      card2Stat3Val: '12 TZ',
-
+      card2Stat1Label: 'Retry Window', card2Stat1Val: '6 Slots/Day',
+      card2Stat2Label: 'Success Lift', card2Stat2Val: '+22%',
+      card2Stat3Label: 'Timezones Covered', card2Stat3Val: '12 TZ',
       card3Title: 'Educational Retention',
-      card3Sub: 'How-to content sequences preventing voluntary churn before it happens',
-      card3Desc: "Users who haven't engaged with core features churn at 3× the rate of power users. The engine identifies disengaged segments and automatically triggers personalised educational sequences — feature discovery emails, in-app tooltips, and 1:1 CSM outreach.",
-      card3Stat1Label: 'Churn Reduction',
-      card3Stat1Val: '−18%',
-      card3Stat2Label: 'Engagement Lift',
-      card3Stat2Val: '+44%',
-      card3Stat3Label: 'Sequences Active',
-      card3Stat3Val: '7',
-
+      card3Sub: "How-to content sequences preventing voluntary churn before it happens",
+      card3Desc: "Users who haven't engaged with core features churn at 3× the rate of power users. The engine identifies disengaged segments and automatically triggers personalised educational sequences.",
+      card3Stat1Label: 'Churn Reduction', card3Stat1Val: '−18%',
+      card3Stat2Label: 'Engagement Lift', card3Stat2Val: '+44%',
+      card3Stat3Label: 'Sequences Active', card3Stat3Val: '7',
       feedbackTitle: 'Feedback Loop',
       feedbackSub: 'How the model learns from PM decisions',
-      feedbackDesc: 'Every task the PM marks as done, deferred, or rejected becomes a training signal. The engine re-weights its recommendation confidence scores within 24 hours, creating a continuously improving PM-in-the-loop AI system.',
+      feedbackDesc: 'Every task the PM marks as done, deferred, or rejected becomes a training signal. The engine re-weights its recommendation confidence scores within 24 hours.',
       feedbackStep1: 'PM Reviews Recommendation',
       feedbackStep2: 'Decision Logged to Model',
       feedbackStep3: 'Confidence Re-weighted',
       feedbackStep4: 'Next Batch Improved',
     },
 
-    // Footer
     footer: {
       text: 'Architected by Team Wins',
       event: 'HackNU 2026',
       rights: 'All rights reserved',
     },
 
-    // Common
     common: {
       liveLabel: 'LIVE',
       users: 'users',
@@ -135,7 +177,7 @@ export const translations = {
     },
   },
 
-  // ─────────────────────────────────────────────
+  // ═══════════════════════════════════════════════
   RU: {
     nav: {
       brand: 'WINS',
@@ -143,6 +185,7 @@ export const translations = {
       diagnostics: 'Диагностика',
       strategyLab: 'Лаборатория',
     },
+
     hero: {
       badge: 'Приоритетная Интервенция',
       badgeSub: 'Движок активен · 3 модели работают',
@@ -154,6 +197,7 @@ export const translations = {
       engineHealth: 'Состояние движка',
       engineHealthVal: '99.98% аптайм',
     },
+
     tasks: {
       title: 'Приоритетные задачи PM',
       sub: 'Рекомендации Wins — действовать в течение 24ч',
@@ -168,7 +212,11 @@ export const translations = {
       task3Tag: 'ПРОВЕРКА',
       markDone: 'Выполнено',
       viewDetails: 'Детали',
+      exportPdf: 'Экспорт PDF',
+      exporting: 'Экспорт…',
+      exported: '✓ Готово',
     },
+
     charts: {
       churnDriversTitle: 'Анализ факторов оттока',
       churnDriversSub: 'Среднее активных дней до события оттока',
@@ -178,6 +226,7 @@ export const translations = {
       lost: 'Утеряны',
       avgDays: 'сред. дней',
     },
+
     scan: {
       title: 'Глубокое сканирование',
       sub: 'Мгновенный анализ причин для любого подписчика',
@@ -193,49 +242,99 @@ export const translations = {
       lastActive: 'Последняя активность',
       churnRisk: 'риск оттока',
     },
+
+    ai: {
+      title: 'Wins AI',
+      subtitle: 'Ваш помощник',
+      placeholder: 'Спросите об удержании…',
+      thinking: 'Wins AI думает…',
+      executeStrategy: 'Выполнить стратегию',
+      sendReport: 'Отправить отчёт',
+      dismiss: 'Закрыть',
+      open: 'Открыть Wins AI',
+      close: 'Закрыть',
+      clearChat: 'Очистить чат',
+      poweredBy: 'На базе GPT-4o',
+      mockApiNote: 'Подключите ключ OpenAI в .env для живых ответов',
+      suggestions: [
+        'Обнаружена аномалия 3DS в Бразилии — заблокировано 2 100 пользователей',
+        'Рекомендован льготный период для 6 400 активных с ошибками оплаты',
+        'Всплеск добровольного оттока в стартер-тарифе — образовательная серия готова',
+      ],
+      mockResponses: [
+        'Проанализированы сбои 3DS. Первопричина: таймаут аутентификации Visa в транзакциях BRL. Рекомендуется немедленный повтор с обходом 3DS v2 для пользователей с низким риском. Прогнозируемое восстановление: $840K.',
+        'Льготный период для 6 400 активных пользователей активирован в 09:14 UTC. Прогноз восстановления: +31% на основе исторических данных когорт. Уведомить команду CSM?',
+        'Образовательная серия для 14 300 стартер-пользователей поставлена в очередь. 7 касаний за 14 дней. Прогноз снижения добровольного оттока: −18%. Запустить сейчас?',
+      ],
+    },
+
+    diagnostics: {
+      title: 'Диагностика',
+      sub: 'Метрики производительности модели и риск-интеллект пользователей',
+      modelHealth: 'Здоровье модели',
+      modelHealthSub: 'Метрики движка прогнозирования оттока в реальном времени',
+      f1Score: 'F1 Score',
+      precision: 'Точность',
+      recall: 'Полнота',
+      confidence: 'Уверенность',
+      aucRoc: 'AUC-ROC',
+      lastRetrain: 'Последнее обучение',
+      lastRetrainVal: '4 часа назад',
+      trainingSize: 'Обучающая выборка',
+      trainingSizeVal: '284К образцов',
+      scatterTitle: 'Кластеры рисков пользователей',
+      scatterSub: 'Активные дни vs попытки оплаты — размер точки = LTV',
+      activityDays: 'Активные дни',
+      paymentAttempts: 'Попытки оплаты',
+      healthy: 'Здоровые',
+      involuntary: 'Непреднамеренный отток',
+      voluntary: 'Добровольный отток',
+      ltv: 'LTV Score',
+      usersInCluster: 'пользователей в кластере',
+      tooltipActivity: 'Активность:',
+      tooltipPayments: 'Попытки:',
+      tooltipLtv: 'LTV:',
+      riskIndex: 'Индекс риска',
+      anomalyFeed: 'Лента аномалий',
+      anomalyFeedSub: 'Сигналы реального времени от конвейера обнаружения',
+    },
+
     strategy: {
       title: 'Лаборатория Стратегий',
       sub: 'Долгосрочная архитектура удержания от команды Wins',
       card1Title: 'Протокол умного льготного периода',
-      card1Sub: 'Автоматическая 72-часовая защита для активных пользователей со сбоями оплаты',
-      card1Desc: 'При сбое оплаты активного пользователя движок предоставляет 72-часовое окно вместо немедленной блокировки. В этот период автоматически выполняются повторные попытки с учётом часового пояса.',
-      card1Stat1Label: 'Льготный период',
-      card1Stat1Val: '72 часа',
-      card1Stat2Label: 'Возврат',
-      card1Stat2Val: '+31%',
-      card1Stat3Label: 'Защищено',
-      card1Stat3Val: '6 400',
+      card1Sub: 'Автоматическая 72-часовая защита для активных с ошибками оплаты',
+      card1Desc: 'При сбое оплаты активного пользователя движок предоставляет 72-часовое окно вместо немедленной блокировки.',
+      card1Stat1Label: 'Льготный период', card1Stat1Val: '72 часа',
+      card1Stat2Label: 'Возврат', card1Stat2Val: '+31%',
+      card1Stat3Label: 'Защищено', card1Stat3Val: '6 400',
       card2Title: 'Оптимизация логики Dunning',
       card2Sub: 'Умные повторные попытки оплаты по часовым поясам и поведению',
-      card2Desc: 'Стандартный dunning повторяет попытки через фиксированные интервалы. Наша модель использует данные поведения (часовой пояс, среднее время сессии) для оптимальных попыток.',
-      card2Stat1Label: 'Окно попыток',
-      card2Stat1Val: '6 слотов/день',
-      card2Stat2Label: 'Рост успеха',
-      card2Stat2Val: '+22%',
-      card2Stat3Label: 'Часовых поясов',
-      card2Stat3Val: '12 ЧП',
+      card2Desc: 'Наша модель использует поведенческие данные для оптимальных повторных попыток оплаты.',
+      card2Stat1Label: 'Окно попыток', card2Stat1Val: '6 слотов/день',
+      card2Stat2Label: 'Рост успеха', card2Stat2Val: '+22%',
+      card2Stat3Label: 'Часовых поясов', card2Stat3Val: '12 ЧП',
       card3Title: 'Образовательное удержание',
       card3Sub: 'Обучающие последовательности для предотвращения добровольного оттока',
-      card3Desc: 'Пользователи без взаимодействия с ключевыми функциями уходят в 3× чаще. Движок выявляет незаинтересованных и запускает персонализированные обучающие последовательности.',
-      card3Stat1Label: 'Снижение оттока',
-      card3Stat1Val: '−18%',
-      card3Stat2Label: 'Рост вовлечённости',
-      card3Stat2Val: '+44%',
-      card3Stat3Label: 'Активных серий',
-      card3Stat3Val: '7',
+      card3Desc: 'Движок выявляет незаинтересованных пользователей и запускает персонализированные обучающие последовательности.',
+      card3Stat1Label: 'Снижение оттока', card3Stat1Val: '−18%',
+      card3Stat2Label: 'Рост вовлечённости', card3Stat2Val: '+44%',
+      card3Stat3Label: 'Активных серий', card3Stat3Val: '7',
       feedbackTitle: 'Петля обратной связи',
       feedbackSub: 'Как модель учится на решениях PM',
-      feedbackDesc: 'Каждая задача, отмеченная PM как выполненная, отложенная или отклонённая, становится обучающим сигналом. Движок пересчитывает оценки уверенности в течение 24 часов.',
+      feedbackDesc: 'Каждое решение PM становится обучающим сигналом. Движок пересчитывает оценки уверенности в течение 24 часов.',
       feedbackStep1: 'PM проверяет рекомендацию',
       feedbackStep2: 'Решение логируется в модель',
       feedbackStep3: 'Уверенность пересчитывается',
       feedbackStep4: 'Следующий батч улучшен',
     },
+
     footer: {
       text: 'Создано командой Wins',
       event: 'HackNU 2026',
       rights: 'Все права защищены',
     },
+
     common: {
       liveLabel: 'ПРЯМОЙ ЭФИР',
       users: 'польз.',
@@ -254,7 +353,7 @@ export const translations = {
     },
   },
 
-  // ─────────────────────────────────────────────
+  // ═══════════════════════════════════════════════
   KZ: {
     nav: {
       brand: 'WINS',
@@ -262,6 +361,7 @@ export const translations = {
       diagnostics: 'Диагностика',
       strategyLab: 'Зертхана',
     },
+
     hero: {
       badge: 'Басым Іс-қимыл',
       badgeSub: 'Қозғалтқыш белсенді · 3 үлгі жұмыс істейді',
@@ -273,6 +373,7 @@ export const translations = {
       engineHealth: 'Қозғалтқыш денсаулығы',
       engineHealthVal: '99.98% жұмыс уақыты',
     },
+
     tasks: {
       title: 'PM Басымдықты Тапсырмалары',
       sub: 'Wins ұсыныстары — 24 сағат ішінде әрекет ету',
@@ -287,7 +388,11 @@ export const translations = {
       task3Tag: 'ТЕКСЕРУ',
       markDone: 'Орындалды',
       viewDetails: 'Мәліметтер',
+      exportPdf: 'PDF Экспорт',
+      exporting: 'Экспорт…',
+      exported: '✓ Дайын',
     },
+
     charts: {
       churnDriversTitle: 'Кету Факторларын Талдау',
       churnDriversSub: 'Кету оқиғасына дейінгі орташа белсенді күндер',
@@ -297,6 +402,7 @@ export const translations = {
       lost: 'Жоғалған',
       avgDays: 'орт. күн',
     },
+
     scan: {
       title: 'Терең Сканерлеу',
       sub: 'Кез келген жазылушыны лезде талдау',
@@ -312,49 +418,99 @@ export const translations = {
       lastActive: 'Соңғы белсенділік',
       churnRisk: 'кету тәуекелі',
     },
+
+    ai: {
+      title: 'Wins AI',
+      subtitle: 'Сіздің көмекшіңіз',
+      placeholder: 'Сақтау туралы сұраңыз…',
+      thinking: 'Wins AI ойлауда…',
+      executeStrategy: 'Стратегияны орындау',
+      sendReport: 'Есеп жіберу',
+      dismiss: 'Жабу',
+      open: 'Wins AI ашу',
+      close: 'Жабу',
+      clearChat: 'Чатты тазалау',
+      poweredBy: 'GPT-4o негізінде',
+      mockApiNote: 'Тікелей жауап алу үшін .env ішіне OpenAI кілтін қосыңыз',
+      suggestions: [
+        'Бразилияда 3DS аномалиясы анықталды — 2 100 пайдаланушы бұғатталды',
+        'Төлем қателері бар 6 400 белсенді үшін жеңілдік кезеңі ұсынылды',
+        'Стартер тарифінде ерікті кетудің өсуі — оқулық серия дайын',
+      ],
+      mockResponses: [
+        '3DS ақауларын талдадым. Себебі: BRL транзакцияларда Visa аутентификациясының уақыты аяқталуы. Төмен тәуекелді пайдаланушыларға 3DS v2 айналып өтіп, дереу қайталауды ұсынамын. Болжамды қалпына келтіру: $840K.',
+        '6 400 белсенді пайдаланушы үшін жеңілдік кезеңі 09:14 UTC-та іске қосылды. Тарихи деректер негізінде қалпына келу болжамы: +31%. CSM командасына хабарлайын ба?',
+        '14 300 стартер пайдаланушысы үшін оқулық серия кезекке қойылды. 14 күн ішінде 7 байланыс нүктесі. Ерікті кетуді болжамды азайту: −18%. Қазір іске қосайын ба?',
+      ],
+    },
+
+    diagnostics: {
+      title: 'Диагностика',
+      sub: 'Үлгі өнімділік көрсеткіштері және пайдаланушы тәуекел интеллекті',
+      modelHealth: 'Үлгі денсаулығы',
+      modelHealthSub: 'Кету болжау қозғалтқышының тікелей көрсеткіштері',
+      f1Score: 'F1 Score',
+      precision: 'Дәлдік',
+      recall: 'Еске түсіру',
+      confidence: 'Сенімділік',
+      aucRoc: 'AUC-ROC',
+      lastRetrain: 'Соңғы оқыту',
+      lastRetrainVal: '4 сағат бұрын',
+      trainingSize: 'Оқыту жиыны',
+      trainingSizeVal: '284К үлгі',
+      scatterTitle: 'Пайдаланушы тәуекел кластерлері',
+      scatterSub: 'Белсенді күндер vs төлем әрекеттері — нүкте өлшемі = LTV',
+      activityDays: 'Белсенді күндер',
+      paymentAttempts: 'Төлем әрекеттері',
+      healthy: 'Сау',
+      involuntary: 'Еріксіз кету',
+      voluntary: 'Ерікті кету',
+      ltv: 'LTV Score',
+      usersInCluster: 'кластердегі пайдаланушылар',
+      tooltipActivity: 'Белсенділік:',
+      tooltipPayments: 'Төлемдер:',
+      tooltipLtv: 'LTV:',
+      riskIndex: 'Тәуекел индексі',
+      anomalyFeed: 'Аномалия ағыны',
+      anomalyFeedSub: 'Анықтау конвейерінен нақты уақыт сигналдары',
+    },
+
     strategy: {
       title: 'Стратегия Зертханасы',
       sub: 'Wins командасының ұзақ мерзімді сақтау архитектурасы',
       card1Title: 'Ақылды Жеңілдік Кезеңі Протоколы',
       card1Sub: 'Төлем ақаулары бар белсенді пайдаланушыларға автоматты 72 сағаттық қорғаныс',
-      card1Desc: 'Белсенді пайдаланушының төлемі сәтсіз болғанда, қозғалтқыш бірден бұғаттамай 72 сағаттық терезе береді. Осы уақытта оңтайлы интервалдармен автоматты қайта әрекеттер жасалады.',
-      card1Stat1Label: 'Жеңілдік терезесі',
-      card1Stat1Val: '72 Сағат',
-      card1Stat2Label: 'Қалпына келу',
-      card1Stat2Val: '+31%',
-      card1Stat3Label: 'Қорғалғандар',
-      card1Stat3Val: '6,400',
+      card1Desc: 'Белсенді пайдаланушының төлемі сәтсіз болғанда, қозғалтқыш бірден бұғаттамай 72 сағаттық терезе береді.',
+      card1Stat1Label: 'Жеңілдік терезесі', card1Stat1Val: '72 Сағат',
+      card1Stat2Label: 'Қалпына келу', card1Stat2Val: '+31%',
+      card1Stat3Label: 'Қорғалғандар', card1Stat3Val: '6,400',
       card2Title: 'Dunning Логикасын Оңтайландыру',
       card2Sub: 'Уақыт белдеуі мен мінез-құлыққа негізделген ақылды төлем қайталаулары',
-      card2Desc: 'Стандартты dunning қайталауларды белгіленген аралықта жасайды. Біздің үлгіміз мінез-құлық деректерін пайдаланып ең тиімді уақытта қайталаулар жасайды.',
-      card2Stat1Label: 'Қайталау терезесі',
-      card2Stat1Val: '6 ұяшық/күн',
-      card2Stat2Label: 'Сәтті өсу',
-      card2Stat2Val: '+22%',
-      card2Stat3Label: 'Уақыт белдеулері',
-      card2Stat3Val: '12',
+      card2Desc: 'Біздің үлгіміз мінез-құлық деректерін пайдаланып ең тиімді уақытта қайталаулар жасайды.',
+      card2Stat1Label: 'Қайталау терезесі', card2Stat1Val: '6 ұяшық/күн',
+      card2Stat2Label: 'Сәтті өсу', card2Stat2Val: '+22%',
+      card2Stat3Label: 'Уақыт белдеулері', card2Stat3Val: '12',
       card3Title: 'Білім беру арқылы Сақтау',
       card3Sub: 'Еріксіз кетуді алдын алатын оқулық контент сериялары',
-      card3Desc: 'Негізгі мүмкіндіктерді пайдаланбаған пайдаланушылар 3× жиі кетеді. Қозғалтқыш белсіз сегменттерді анықтап, жекелендірілген оқу сериялары іске қосады.',
-      card3Stat1Label: 'Кетуді азайту',
-      card3Stat1Val: '−18%',
-      card3Stat2Label: 'Қатысуды арттыру',
-      card3Stat2Val: '+44%',
-      card3Stat3Label: 'Белсенді сериялар',
-      card3Stat3Val: '7',
+      card3Desc: 'Қозғалтқыш белсіз сегменттерді анықтап, жекелендірілген оқу сериялары іске қосады.',
+      card3Stat1Label: 'Кетуді азайту', card3Stat1Val: '−18%',
+      card3Stat2Label: 'Қатысуды арттыру', card3Stat2Val: '+44%',
+      card3Stat3Label: 'Белсенді сериялар', card3Stat3Val: '7',
       feedbackTitle: 'Кері Байланыс Циклі',
       feedbackSub: 'Үлгі PM шешімдерінен қалай үйренеді',
-      feedbackDesc: 'PM орындалды, кейінге қалдырылды немесе қабылданбады деп белгілеген әр тапсырма оқыту сигналына айналады. Қозғалтқыш 24 сағат ішінде сенімділік ұпайларын қайта есептейді.',
+      feedbackDesc: 'PM белгілеген әр тапсырма оқыту сигналына айналады. Қозғалтқыш 24 сағат ішінде сенімділік ұпайларын қайта есептейді.',
       feedbackStep1: 'PM ұсынысты тексереді',
       feedbackStep2: 'Шешім үлгіге тіркеледі',
       feedbackStep3: 'Сенімділік қайта есептеледі',
       feedbackStep4: 'Келесі топтама жақсарды',
     },
+
     footer: {
       text: 'Wins командасы жасаған',
       event: 'HackNU 2026',
       rights: 'Барлық құқықтар қорғалған',
     },
+
     common: {
       liveLabel: 'ТІКЕЛЕЙ',
       users: 'пайд.',

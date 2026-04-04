@@ -4,12 +4,15 @@ import { I18nProvider } from './context/I18nContext'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import WinsAI from './components/WinsAI'
 import Overview from './pages/Overview'
+import Diagnostics from './pages/Diagnostics'
 import StrategyLab from './pages/StrategyLab'
 import { clsx } from 'clsx'
 
 const pages = {
-  overview: Overview,
+  overview:    Overview,
+  diagnostics: Diagnostics,
   strategyLab: StrategyLab,
 }
 
@@ -23,11 +26,14 @@ function AppShell() {
       'min-h-screen transition-colors duration-300',
       isDark ? 'bg-black text-white' : 'bg-slate-50 text-slate-900',
     )}>
-      {/* Ambient background glow (dark only) */}
+      {/* Ambient radial glow (dark only) */}
       {isDark && (
         <div className="fixed inset-0 pointer-events-none z-0"
           style={{
-            background: 'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(204,255,0,0.04) 0%, transparent 70%)',
+            background: [
+              'radial-gradient(ellipse 80% 40% at 50% 0%, rgba(204,255,0,0.04) 0%, transparent 70%)',
+              'radial-gradient(ellipse 50% 30% at 100% 100%, rgba(0,229,255,0.03) 0%, transparent 70%)',
+            ].join(','),
           }}
         />
       )}
@@ -42,7 +48,7 @@ function AppShell() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.24, ease: 'easeInOut' }}
+              transition={{ duration: 0.22, ease: 'easeInOut' }}
             >
               <Page />
             </motion.div>
@@ -51,6 +57,9 @@ function AppShell() {
 
         <Footer />
       </div>
+
+      {/* Floating AI Widget — always present, z-50 */}
+      <WinsAI />
     </div>
   )
 }
