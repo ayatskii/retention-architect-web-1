@@ -3,17 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Send, Zap, Trash2, ChevronDown, Bot, User } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
+import { getAccent, accentFg, accentAlpha, accentGlow } from '../lib/theme'
 import { clsx } from 'clsx'
 
 // ── Typing dots animation ───────────────────────
-function ThinkingDots() {
+function ThinkingDots({ isDark }) {
+  const accent = getAccent(isDark)
   return (
     <div className="flex items-center gap-1 px-4 py-3">
       {[0, 1, 2].map(i => (
         <motion.div
           key={i}
           className="w-2 h-2 rounded-full"
-          style={{ background: '#ccff00' }}
+          style={{ background: accent }}
           animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18 }}
         />
@@ -25,6 +27,8 @@ function ThinkingDots() {
 // ── Single message bubble ───────────────────────
 function Message({ msg, t, isDark }) {
   const isAI = msg.role === 'ai'
+  const accent = getAccent(isDark)
+  const fg     = accentFg(isDark)
   const [execDone, setExecDone] = useState(false)
   const [reportDone, setReportDone] = useState(false)
 
@@ -51,7 +55,7 @@ function Message({ msg, t, isDark }) {
           ? 'text-black'
           : isDark ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60',
       )}
-        style={isAI ? { background: '#ccff00', boxShadow: '0 0 8px rgba(204,255,0,0.4)' } : {}}
+        style={isAI ? { background: accent, color: fg, boxShadow: accentGlow(isDark, 'sm') } : {}}
       >
         {isAI ? <Zap size={12} strokeWidth={3} /> : <User size={12} />}
       </div>
@@ -78,7 +82,7 @@ function Message({ msg, t, isDark }) {
               <button
                 onClick={() => msg.onSuggestionClick?.(msg.content)}
                 className="text-[0.58rem] font-bold px-2 py-1 rounded-lg transition-colors"
-                style={{ background: 'rgba(204,255,0,0.15)', color: '#ccff00', border: '1px solid rgba(204,255,0,0.25)' }}
+                style={{ background: accentAlpha(isDark, 0.15), color: accent, border: `1px solid ${accentAlpha(isDark, 0.25)}` }}
               >
                 Ask about this ›
               </button>
@@ -98,10 +102,10 @@ function Message({ msg, t, isDark }) {
                   : 'hover:opacity-80',
               )}
               style={{
-                background: execDone ? '#ccff00' : 'rgba(204,255,0,0.15)',
-                color: execDone ? '#000' : '#ccff00',
-                border: '1px solid rgba(204,255,0,0.3)',
-                boxShadow: execDone ? '0 0 12px rgba(204,255,0,0.4)' : 'none',
+                background: execDone ? accent : accentAlpha(isDark, 0.15),
+                color: execDone ? fg : accent,
+                border: `1px solid ${accentAlpha(isDark, 0.3)}`,
+                boxShadow: execDone ? accentGlow(isDark) : 'none',
               }}
             >
               <Zap size={10} strokeWidth={3} />
@@ -138,6 +142,8 @@ function Message({ msg, t, isDark }) {
 export default function WinsAI() {
   const { t, lang } = useI18n()
   const { isDark } = useTheme()
+  const accent = getAccent(isDark)
+  const fg     = accentFg(isDark)
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [input, setInput] = useState('')
@@ -270,17 +276,18 @@ export default function WinsAI() {
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl text-black text-sm font-black shadow-2xl"
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm font-black shadow-2xl"
             style={{
-              background: '#ccff00',
-              boxShadow: '0 0 24px rgba(204,255,0,0.55), 0 0 48px rgba(204,255,0,0.25), 0 4px 24px rgba(0,0,0,0.4)',
+              background: accent,
+              color: fg,
+              boxShadow: `${accentGlow(isDark, 'lg')}, 0 4px 24px rgba(0,0,0,0.4)`,
             }}
             aria-label={t.ai.open}
           >
             {/* Pulse ring */}
             <span className="relative flex-shrink-0">
               <span className="absolute inset-0 rounded-full animate-ping"
-                style={{ background: 'rgba(204,255,0,0.4)' }} />
+                style={{ background: accentAlpha(isDark, 0.4) }} />
               <Zap size={16} strokeWidth={3} className="relative" />
             </span>
             {t.ai.title}
@@ -300,8 +307,8 @@ export default function WinsAI() {
             className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[400px] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
             style={{
               maxHeight: minimized ? 'auto' : '560px',
-              border: '1px solid rgba(204,255,0,0.3)',
-              boxShadow: '0 0 40px rgba(204,255,0,0.12), 0 0 80px rgba(204,255,0,0.06), 0 20px 60px rgba(0,0,0,0.5)',
+              border: `1px solid ${accentAlpha(isDark, 0.3)}`,
+              boxShadow: `${accentGlow(isDark, 'md')}, 0 20px 60px rgba(0,0,0,0.5)`,
               background: isDark ? 'rgba(6,6,6,0.97)' : 'rgba(252,252,252,0.97)',
               backdropFilter: 'blur(24px)',
             }}
@@ -309,14 +316,14 @@ export default function WinsAI() {
             {/* ── Header ── */}
             <div
               className="flex items-center gap-3 px-4 py-3.5 border-b flex-shrink-0"
-              style={{ borderColor: 'rgba(204,255,0,0.15)', background: 'rgba(204,255,0,0.05)' }}
+              style={{ borderColor: accentAlpha(isDark, 0.15), background: accentAlpha(isDark, 0.05) }}
             >
               <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: '#ccff00', boxShadow: '0 0 12px rgba(204,255,0,0.5)' }}>
-                <Zap size={14} color="#000" strokeWidth={3} />
+                style={{ background: accent, boxShadow: accentGlow(isDark) }}>
+                <Zap size={14} color={fg} strokeWidth={3} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black leading-none" style={{ color: '#ccff00' }}>
+                <p className="text-sm font-black leading-none" style={{ color: accent }}>
                   {t.ai.title}
                 </p>
                 <p className={clsx('text-[0.58rem] mt-0.5', isDark ? 'text-white/35' : 'text-black/40')}>
@@ -327,8 +334,8 @@ export default function WinsAI() {
               {/* Live indicator */}
               <div className="flex items-center gap-1.5 mr-1">
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: '#ccff00', boxShadow: '0 0 4px #ccff00' }} />
-                <span className="text-[0.52rem] font-bold" style={{ color: '#ccff00' }}>LIVE</span>
+                  style={{ background: accent, boxShadow: `0 0 4px ${accent}` }} />
+                <span className="text-[0.52rem] font-bold" style={{ color: accent }}>LIVE</span>
               </div>
 
               {/* Controls */}
@@ -375,15 +382,15 @@ export default function WinsAI() {
                         className="flex items-center gap-2.5"
                       >
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ background: '#ccff00' }}>
-                          <Zap size={12} color="#000" strokeWidth={3} />
+                          style={{ background: accent }}>
+                          <Zap size={12} color={fg} strokeWidth={3} />
                         </div>
                         <div className="rounded-2xl border"
                           style={{
-                            background: isDark ? 'rgba(204,255,0,0.07)' : 'rgba(100,163,13,0.08)',
-                            borderColor: isDark ? 'rgba(204,255,0,0.15)' : 'rgba(100,163,13,0.2)',
+                            background: accentAlpha(isDark, 0.07),
+                            borderColor: accentAlpha(isDark, 0.15),
                           }}>
-                          <ThinkingDots />
+                          <ThinkingDots isDark={isDark} />
                         </div>
                       </motion.div>
                     )}
@@ -397,7 +404,7 @@ export default function WinsAI() {
             {/* ── Input ── */}
             {!minimized && (
               <div className="flex-shrink-0 border-t px-3 py-3"
-                style={{ borderColor: 'rgba(204,255,0,0.1)' }}>
+                style={{ borderColor: accentAlpha(isDark, 0.1) }}>
                 <div className="flex gap-2 items-end">
                   <textarea
                     ref={inputRef}
@@ -413,7 +420,7 @@ export default function WinsAI() {
                         : 'bg-black/[0.04] text-black placeholder-black/30 border border-black/[0.08]',
                     )}
                     style={{ maxHeight: '80px' }}
-                    onFocus={e => { e.target.style.borderColor = 'rgba(204,255,0,0.4)' }}
+                    onFocus={e => { e.target.style.borderColor = accentAlpha(isDark, 0.4) }}
                     onBlur={e => { e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
                   />
                   <motion.button
@@ -421,9 +428,9 @@ export default function WinsAI() {
                     disabled={!input.trim() || thinking}
                     whileTap={{ scale: 0.93 }}
                     className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-35 disabled:cursor-not-allowed"
-                    style={{ background: '#ccff00', boxShadow: '0 0 12px rgba(204,255,0,0.35)' }}
+                    style={{ background: accent, boxShadow: accentGlow(isDark, 'sm') }}
                   >
-                    <Send size={14} color="#000" strokeWidth={2.5} />
+                    <Send size={14} color={fg} strokeWidth={2.5} />
                   </motion.button>
                 </div>
                 <p className={clsx('text-[0.52rem] mt-2 text-center', isDark ? 'text-white/15' : 'text-black/20')}>

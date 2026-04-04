@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   TrendingDown, TrendingUp, Users, CheckCircle2, Clock3,
@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
+import { fetchStats, fetchPredict } from '../services/api'
 import { clsx } from 'clsx'
 
 // ─── helpers ──────────────────────────────────
@@ -149,6 +150,17 @@ export default function Overview() {
   const { t } = useI18n()
   const { isDark } = useTheme()
 
+  // Live stats from backend (with fallback to hardcoded values)
+  const [stats, setStats] = useState({
+    total_revenue_at_risk: 3_200_000,
+    recoverable_assets: 1_200_000,
+    total_churned_users: 22_500,
+    engine_health_pct: 99.98,
+  })
+  useEffect(() => {
+    fetchStats().then(data => setStats(data)).catch(() => {})
+  }, [])
+
   // PM tasks state
   const [tasks, setTasks] = useState([
     { id: 1, done: false, exporting: false, exported: false },
@@ -172,10 +184,26 @@ export default function Overview() {
   const runScan = async () => {
     if (!query.trim()) return
     setScanning(true); setScanResult(null); setScanError(null)
-    await new Promise(r => setTimeout(r, 750))
-    const found = MOCK_USERS[query.trim().toUpperCase()]
-    if (found) setScanResult(found)
-    else setScanError(`${t.scan.notFound} "${query}"`)
+    try {
+      const apiResult = await fetchPredict(query.trim())
+      // Merge API risk fields with local UI-only fields (factors, riskColor)
+      const uid = query.trim().toUpperCase()
+      const local = MOCK_USERS[uid] ?? {}
+      setScanResult({
+        ...local,
+        id: apiResult.user_id,
+        name: apiResult.name ?? local.name ?? apiResult.user_id,
+        plan: apiResult.plan ?? local.plan,
+        riskScore: apiResult.churn_score,
+        riskLevel: apiResult.risk_level,
+        riskColor: apiResult.risk_level === 'CRITICAL' ? '#ff0055'
+          : apiResult.risk_level === 'HEALTHY' ? '#ccff00' : '#ff8800',
+        churnType: apiResult.risk_type?.toLowerCase() ?? 'unknown',
+        rec: apiResult.recommendation,
+      })
+    } catch {
+      setScanError(`${t.scan.notFound} "${query}"`)
+    }
     setScanning(false)
   }
 
@@ -257,7 +285,7 @@ export default function Overview() {
                 color: '#ff0055',
                 textShadow: '0 0 20px rgba(255,0,85,0.7)',
               }}>
-              $3.2M
+              ${(stats.total_revenue_at_risk / 1_000_000).toFixed(1)}M
             </div>
             <p className={clsx('text-[0.62rem] leading-snug', textMuted)}>{t.hero.revenueAtRiskSub}</p>
             <div className="mt-3 h-px" style={{ background: 'linear-gradient(90deg,transparent,#ff005560,transparent)' }} />
@@ -279,7 +307,7 @@ export default function Overview() {
                 color: '#ccff00',
                 textShadow: '0 0 20px rgba(204,255,0,0.7)',
               }}>
-              $1.2M
+              ${(stats.recoverable_assets / 1_000_000).toFixed(1)}M
             </div>
             <p className={clsx('text-[0.62rem] leading-snug', textMuted)}>{t.hero.recoverableRevenueSub}</p>
             <div className="mt-3 h-px" style={{ background: 'linear-gradient(90deg,transparent,#ccff0060,transparent)' }} />
@@ -298,7 +326,7 @@ export default function Overview() {
                 color: isDark ? '#fff' : '#111',
                 textShadow: isDark ? '0 0 20px rgba(255,255,255,0.3)' : 'none',
               }}>
-              22,500
+              {stats.total_churned_users.toLocaleString()}
             </div>
             <p className={clsx('text-[0.62rem]', textMuted)}>this period</p>
           </Card>
@@ -316,7 +344,7 @@ export default function Overview() {
                 color: '#ccff00',
                 textShadow: '0 0 20px rgba(204,255,0,0.7)',
               }}>
-              99.98<span className="text-2xl">%</span>
+              {stats.engine_health_pct.toFixed(2)}<span className="text-2xl">%</span>
             </div>
             <p className={clsx('text-[0.62rem]', textMuted)}>{t.hero.engineHealthVal}</p>
           </Card>

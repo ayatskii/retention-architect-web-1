@@ -18,8 +18,8 @@
    LIGHT THEME OVERRIDES
 ══════════════════════════════════════════ */
 html.light {
-  --accent: #65a30d;
-  --accent-muted: rgba(101,163,13,0.12);
+  --accent: #047857;
+  --accent-muted: rgba(4,120,87,0.12);
   --error: #e11d48;
   --surface: rgba(255,255,255,0.82);
   --border: rgba(0,0,0,0.07);
@@ -92,6 +92,16 @@ html.light {
   .btn-lime:active:not(:disabled) { transform: scale(0.97); }
   .btn-lime:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
+  /* Light mode: forest green button — legible on white */
+  html.light .btn-lime {
+    background: #047857;
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(4,120,87,0.28);
+  }
+  html.light .btn-lime:hover:not(:disabled) {
+    box-shadow: 0 0 22px rgba(4,120,87,0.45);
+  }
+
   /* Glass sidebar (kept for any reuse) */
   .glass-sidebar {
     background: rgba(4,4,4,0.92);
@@ -149,12 +159,16 @@ html.light {
 }
 
 @layer utilities {
-  /* Neon glow text */
+  /* Neon glow text — dark only */
   .neon-lime {
     text-shadow:
       0 0 10px rgba(204,255,0,0.9),
       0 0 24px rgba(204,255,0,0.5),
       0 0 48px rgba(204,255,0,0.28);
+  }
+  html.light .neon-lime {
+    color: #047857;
+    text-shadow: none;
   }
   .neon-magenta {
     text-shadow:

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Sun, Moon, Menu, X, ChevronDown, Zap } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
+import { getAccent, accentFg, accentGlow, accentTextShadow } from '../lib/theme'
 import { clsx } from 'clsx'
 
 const LANGS  = ['EN', 'RU', 'KZ']
@@ -11,6 +12,8 @@ const PAGES  = ['overview', 'diagnostics', 'strategyLab']
 export default function Navbar({ activePage, onNavigate }) {
   const { lang, changeLang, t } = useI18n()
   const { isDark, toggleTheme }  = useTheme()
+  const accent = getAccent(isDark)
+  const fg     = accentFg(isDark)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [langOpen,   setLangOpen]   = useState(false)
 
@@ -29,12 +32,12 @@ export default function Navbar({ activePage, onNavigate }) {
         className={clsx(
           'relative px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap',
           active
-            ? 'text-black'
+            ? ''
             : isDark
               ? 'text-white/45 hover:text-white hover:bg-white/[0.06]'
               : 'text-black/45 hover:text-black hover:bg-black/[0.06]',
         )}
-        style={active ? { background: '#ccff00', boxShadow: '0 0 18px rgba(204,255,0,0.38)' } : {}}
+        style={active ? { background: accent, color: fg, boxShadow: accentGlow(isDark) } : {}}
       >
         {label(page)}
       </button>
@@ -61,12 +64,12 @@ export default function Navbar({ activePage, onNavigate }) {
           >
             {/* Pulsing icon */}
             <div className="wins-logo-pulse w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: '#ccff00' }}>
-              <Zap size={15} color="#000" strokeWidth={3} />
+              style={{ background: accent }}>
+              <Zap size={15} color={fg} strokeWidth={3} />
             </div>
             <span
               className="text-xl font-black tracking-tight hidden sm:block"
-              style={{ color: '#ccff00', textShadow: '0 0 18px rgba(204,255,0,0.65)', letterSpacing: '-0.01em' }}
+              style={{ color: accent, textShadow: accentTextShadow(isDark), letterSpacing: '-0.01em' }}
             >
               {t.nav.brand}
             </span>
@@ -123,7 +126,7 @@ export default function Navbar({ activePage, onNavigate }) {
                               ? 'text-white/50 hover:text-white hover:bg-white/[0.05]'
                               : 'text-black/50 hover:text-black hover:bg-black/[0.05]',
                         )}
-                        style={l === lang ? { background: '#ccff00' } : {}}
+                        style={l === lang ? { background: accent, color: fg } : {}}
                       >
                         {l}
                         {l === lang && <span className="text-[0.55rem] opacity-60">✓</span>}
@@ -151,7 +154,7 @@ export default function Navbar({ activePage, onNavigate }) {
             {/* Avatar */}
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black cursor-pointer"
-              style={{ background: '#ccff00', color: '#000', boxShadow: '0 0 10px rgba(204,255,0,0.3)' }}
+              style={{ background: accent, color: fg, boxShadow: accentGlow(isDark, 'sm') }}
             >
               PM
             </div>
@@ -191,7 +194,7 @@ export default function Navbar({ activePage, onNavigate }) {
                         ? 'text-black'
                         : isDark ? 'text-white/50' : 'text-black/50',
                     )}
-                    style={activePage === page ? { background: '#ccff00' } : {}}
+                    style={activePage === page ? { background: accent, color: fg } : {}}
                   >
                     {label(page)}
                   </button>
@@ -203,7 +206,7 @@ export default function Navbar({ activePage, onNavigate }) {
                   {LANGS.map(l => (
                     <button key={l} onClick={() => changeLang(l)}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                      style={l === lang ? { background: '#ccff00', color: '#000' }
+                      style={l === lang ? { background: accent, color: fg }
                         : { color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                       {l}
                     </button>
@@ -215,7 +218,7 @@ export default function Navbar({ activePage, onNavigate }) {
                     {isDark ? <Sun size={15} /> : <Moon size={15} />}
                   </button>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black"
-                    style={{ background: '#ccff00', color: '#000' }}>PM</div>
+                    style={{ background: accent, color: fg }}>PM</div>
                 </div>
               </div>
             </motion.div>
