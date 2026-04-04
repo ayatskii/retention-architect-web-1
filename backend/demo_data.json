@@ -1,0 +1,69 @@
+{
+  "users": [
+    {
+      "id": "0",
+      "risk_score": 0.85,
+      "churn_type": "Involuntary",
+      "metrics": {
+        "gen_failed": 0.0558,
+        "gen_total": 198,
+        "frustration": 0.1962,
+        "sub_weekday": 2,
+        "gen_completed": 0.8889
+      },
+      "summary": "Technical churn due to high gen_failed rate."
+    },
+    {
+      "id": "1",
+      "risk_score": 0.15,
+      "churn_type": "Healthy",
+      "metrics": {
+        "gen_failed": 0.0039,
+        "gen_total": 198,
+        "frustration": 13.4858,
+        "sub_weekday": 4,
+        "gen_completed": 0.5389
+      },
+      "summary": "Loyal power user with high activity."
+    },
+    {
+      "id": "3",
+      "risk_score": 0.92,
+      "churn_type": "Voluntary",
+      "metrics": {
+        "gen_failed": 0.0021,
+        "gen_total": 199,
+        "frustration": 0.7229,
+        "sub_weekday": 3,
+        "gen_completed": 0.0849
+      },
+      "summary": "Critical churn risk. High frustration index detected."
+    },
+    {
+      "id": "4",
+      "risk_score": 0.45,
+      "churn_type": "At Risk",
+      "metrics": {
+        "gen_failed": 0.0043,
+        "gen_total": 199,
+        "frustration": 0.9910,
+        "sub_weekday": 6,
+        "gen_completed": 0.1883
+      },
+      "summary": "Medium risk. Engagement dropping."
+    },
+    {
+      "id": "5",
+      "risk_score": 0.78,
+      "churn_type": "Voluntary",
+      "metrics": {
+        "gen_failed": 0.0045,
+        "gen_total": 67,
+        "frustration": -0.4074,
+        "sub_weekday": 5,
+        "gen_completed": 0.4308
+      },
+      "summary": "High risk. Sharp decline in total generations."
+    }
+  ]
+}

@@ -32,53 +32,59 @@ const MOCK_STATS = {
   interventions_triggered: 4_821,
   arr_recovered:           1_800_000,
   active_grace_periods:    6_400,
+  avg_risk_score:          0.63,
+  high_risk_users_sample:  4,
+  avg_frustration_index:   2.999,
+  avg_gen_failed_rate:     0.0141,
+  avg_completion_rate:     0.4284,
   _mock: true,
 }
 
+// Mirror of demo_data.json for offline fallback
 const MOCK_USERS = {
-  'USR-001': {
-    user_id: 'USR-001',
-    name: 'Aisha Bekova',
-    plan: 'Professional',
-    risk_probability: 0.87,
-    churn_score: 87,
-    risk_level: 'CRITICAL',
-    risk_type: 'Involuntary',
-    top_features: ['payment_failures', 'session_drop', 'support_ticket'],
-    grace_period_eligible: true,
-    ltv_score: 72,
-    last_active_hours_ago: 2,
-    recommendation: 'Immediate payment retry + CSM outreach within 24h. Offer 2-month discount to neutralise billing friction.',
+  '0': {
+    user_id: '0', risk_score: 0.85, churn_score: 85,
+    risk_level: 'CRITICAL', churn_type: 'Involuntary', risk_type: 'Involuntary',
+    metrics: { gen_failed: 0.0558, gen_total: 198, frustration: 0.1962, sub_weekday: 2, gen_completed: 0.8889 },
+    top_features: ['high_technical_error_rate'],
+    summary: 'Technical churn due to high gen_failed rate.',
+    recommendation: 'Technical churn due to high gen_failed rate.',
     _mock: true,
   },
-  'USR-002': {
-    user_id: 'USR-002',
-    name: 'Damir Seitkali',
-    plan: 'Starter',
-    risk_probability: 0.41,
-    churn_score: 41,
-    risk_level: 'MODERATE',
-    risk_type: 'Voluntary',
-    top_features: ['low_engagement', 'no_premium_features', 'competitor_signal'],
-    grace_period_eligible: false,
-    ltv_score: 28,
-    last_active_hours_ago: 72,
-    recommendation: 'Trigger educational email sequence + personalised demo of advanced features.',
+  '1': {
+    user_id: '1', risk_score: 0.15, churn_score: 15,
+    risk_level: 'HEALTHY', churn_type: 'Healthy', risk_type: 'Healthy',
+    metrics: { gen_failed: 0.0039, gen_total: 198, frustration: 13.4858, sub_weekday: 4, gen_completed: 0.5389 },
+    top_features: ['high_engagement'],
+    summary: 'Loyal power user with high activity.',
+    recommendation: 'Loyal power user with high activity.',
     _mock: true,
   },
-  'USR-003': {
-    user_id: 'USR-003',
-    name: 'Zarina Mukhanova',
-    plan: 'Enterprise',
-    risk_probability: 0.12,
-    churn_score: 12,
-    risk_level: 'HEALTHY',
-    risk_type: 'None',
-    top_features: ['high_engagement', 'seat_expansion', 'nps_9'],
-    grace_period_eligible: false,
-    ltv_score: 95,
-    last_active_hours_ago: 0,
-    recommendation: 'Candidate for Enterprise Plus upsell and referral programme enrollment.',
+  '3': {
+    user_id: '3', risk_score: 0.92, churn_score: 92,
+    risk_level: 'CRITICAL', churn_type: 'Voluntary', risk_type: 'Voluntary',
+    metrics: { gen_failed: 0.0021, gen_total: 199, frustration: 0.7229, sub_weekday: 3, gen_completed: 0.0849 },
+    top_features: ['low_completion_rate', 'frustration_anomaly'],
+    summary: 'Critical churn risk. High frustration index detected.',
+    recommendation: 'Critical churn risk. High frustration index detected.',
+    _mock: true,
+  },
+  '4': {
+    user_id: '4', risk_score: 0.45, churn_score: 45,
+    risk_level: 'MODERATE', churn_type: 'At Risk', risk_type: 'At Risk',
+    metrics: { gen_failed: 0.0043, gen_total: 199, frustration: 0.9910, sub_weekday: 6, gen_completed: 0.1883 },
+    top_features: ['low_completion_rate'],
+    summary: 'Medium risk. Engagement dropping.',
+    recommendation: 'Medium risk. Engagement dropping.',
+    _mock: true,
+  },
+  '5': {
+    user_id: '5', risk_score: 0.78, churn_score: 78,
+    risk_level: 'HIGH', churn_type: 'Voluntary', risk_type: 'Voluntary',
+    metrics: { gen_failed: 0.0045, gen_total: 67, frustration: -0.4074, sub_weekday: 5, gen_completed: 0.4308 },
+    top_features: ['sharp_generation_decline'],
+    summary: 'High risk. Sharp decline in total generations.',
+    recommendation: 'High risk. Sharp decline in total generations.',
     _mock: true,
   },
 }
@@ -107,26 +113,26 @@ export async function fetchStats() {
  * @param {string} userId  e.g. "USR-001" or "damir"
  * @returns {Promise<Object>} PredictionResponse schema
  */
+/**
+ * Fetch churn prediction for a user.
+ * - Returns null on HTTP 404 (user not found in demo_data.json).
+ * - Falls back to local mock on network error.
+ * - IDs are NOT uppercased — numeric IDs like "0","1","3","4","5" are matched exactly.
+ *
+ * @param {string} userId
+ * @returns {Promise<Object|null>}  null means user not found
+ */
 export async function fetchPredict(userId) {
-  const uid = userId.trim().toUpperCase()
+  const uid = userId.trim()
   try {
     const res = await fetchWithTimeout(`${BASE_URL}/predict/${encodeURIComponent(uid)}`)
+    if (res.status === 404) return null           // explicit "user not found"
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.json()
-  } catch {
+  } catch (err) {
+    if (err.message?.includes('404')) return null
     console.warn('[api] Backend unavailable — using mock predict for', uid)
-    return (
-      MOCK_USERS[uid] ?? {
-        user_id: uid,
-        risk_probability: 0.55,
-        churn_score: 55,
-        risk_level: 'MODERATE',
-        risk_type: 'Unknown',
-        top_features: ['insufficient_data'],
-        recommendation: 'Insufficient history. Schedule a 30-day monitoring window.',
-        _mock: true,
-      }
-    )
+    return MOCK_USERS[uid] ?? null
   }
 }
 

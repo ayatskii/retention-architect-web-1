@@ -38,13 +38,13 @@ const VOLUNTARY = [
   {x:0,y:0,z:10},{x:3,y:1,z:21},{x:5,y:2,z:29},
 ]
 
-// ─── anomaly feed ─────────────────────────────
+// ─── anomaly feed — ML feature-aware signals ──
 const ANOMALIES = [
-  { id:'A-001', msg:'3DS timeout spike — Brazil region', severity:'critical', color:'#ff0055', ts:'2m ago' },
-  { id:'A-002', msg:'Retry exhaustion cluster — 847 users', severity:'high',    color:'#ff8800', ts:'7m ago' },
-  { id:'A-003', msg:'Session length drop — Starter tier', severity:'warning',  color:'#ffcc00', ts:'19m ago' },
-  { id:'A-004', msg:'Auth failure rate +12% vs baseline',  severity:'high',    color:'#ff8800', ts:'31m ago' },
-  { id:'A-005', msg:'Model drift detected — retraining',   severity:'info',    color:'#00e5ff', ts:'1h ago' },
+  { id:'A-001', msg:'User #0 — gen_failed rate 5.58% (threshold: 3%) · Involuntary churn imminent', severity:'critical', color:'#ff0055', ts:'2m ago' },
+  { id:'A-002', msg:'User #3 — gen_completed 8.49% · Frustration index 0.72 · Critical voluntary churn risk', severity:'critical', color:'#ff0055', ts:'7m ago' },
+  { id:'A-003', msg:'User #5 — gen_total dropped to 67 (avg: 198) · Sharp generation decline detected', severity:'high',    color:'#ff8800', ts:'19m ago' },
+  { id:'A-004', msg:'User #4 — gen_completed 18.83% · At-risk cohort engagement dropping', severity:'warning',  color:'#ffcc00', ts:'31m ago' },
+  { id:'A-005', msg:'Model drift on frustration feature — retraining queued (User #1 outlier: 13.49)', severity:'info',    color:'#00e5ff', ts:'1h ago' },
 ]
 
 // ─── helpers ──────────────────────────────────

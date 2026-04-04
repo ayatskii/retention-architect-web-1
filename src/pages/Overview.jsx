@@ -21,42 +21,49 @@ const fadeUp = (delay = 0) => ({
   transition: { delay, duration: 0.42, ease: 'easeOut' },
 })
 
-// ─── mock user data ────────────────────────────
-const MOCK_USERS = {
-  'USR-001': {
-    id: 'USR-001', name: 'Aisha Bekova', plan: 'Professional',
-    riskScore: 87, riskLevel: 'CRITICAL', riskColor: '#ff0055',
-    churnType: 'involuntary', lastActive: '2h ago',
-    factors: [
-      { icon: CreditCard, labelKey: 'payFail',   detail: 'Payment failed 3× in last 14 days', severity: 'critical' },
-      { icon: Clock3,     labelKey: 'sessLen',   detail: 'Session time dropped −62% in 7 days', severity: 'warning' },
-      { icon: Activity,   labelKey: 'featDecline',detail: 'Core feature usage −45% MoM', severity: 'warning' },
-      { icon: AlertTriangle, labelKey: 'ticket', detail: 'Unresolved billing ticket #TK-8821', severity: 'critical' },
-    ],
-    rec: 'Immediate payment retry + CSM call within 24h. Offer 2-month discount.',
-  },
-  'USR-002': {
-    id: 'USR-002', name: 'Damir Seitkali', plan: 'Starter',
-    riskScore: 41, riskLevel: 'MODERATE', riskColor: '#ff8800',
-    churnType: 'voluntary', lastActive: '3 days ago',
-    factors: [
-      { icon: Activity, labelKey: 'lowEngage',  detail: 'Only 3 logins in 30 days (avg: 18)', severity: 'warning' },
-      { icon: Zap,      labelKey: 'noFeature',  detail: 'Zero premium features since onboarding', severity: 'warning' },
-      { icon: Shield,   labelKey: 'competitor', detail: 'Pricing comparison pages visited 6×', severity: 'critical' },
-    ],
-    rec: 'Trigger educational sequence + personalised advanced feature demo.',
-  },
-  'USR-003': {
-    id: 'USR-003', name: 'Zarina Mukhanova', plan: 'Enterprise',
-    riskScore: 12, riskLevel: 'HEALTHY', riskColor: '#ccff00',
-    churnType: 'healthy', lastActive: '30m ago',
-    factors: [
-      { icon: CheckCircle2, labelKey: 'highEngage', detail: 'Daily active — 94th percentile engagement', severity: 'healthy' },
-      { icon: Activity,     labelKey: 'expanding',  detail: 'Added 4 seats this quarter', severity: 'healthy' },
-      { icon: Shield,       labelKey: 'tenure',     detail: '3.2 yr customer — NPS 9/10', severity: 'healthy' },
-    ],
-    rec: 'Candidate for Enterprise Plus upsell and referral programme.',
-  },
+// ─── derive scan factors from real ML metrics ──
+function buildFactors(metrics = {}, riskScore = 50) {
+  const sev = riskScore >= 75 ? 'critical' : riskScore >= 45 ? 'warning' : 'healthy'
+  return [
+    {
+      icon: CreditCard,
+      labelKey: 'Technical Error Rate',
+      detail: `gen_failed: ${((metrics.gen_failed ?? 0) * 100).toFixed(2)}% — ${
+        (metrics.gen_failed ?? 0) > 0.03
+          ? 'Elevated failure rate — primary churn driver'
+          : 'Within acceptable bounds'
+      }`,
+      severity: (metrics.gen_failed ?? 0) > 0.03 ? 'critical' : sev,
+    },
+    {
+      icon: AlertTriangle,
+      labelKey: 'User Frustration Index',
+      detail: `Score: ${(metrics.frustration ?? 0).toFixed(4)} — ${
+        Math.abs(metrics.frustration ?? 0) < 0.3
+          ? 'Low frustration signal'
+          : Math.abs(metrics.frustration ?? 0) > 5
+            ? 'High engagement detected (positive signal)'
+            : 'Moderate frustration — monitor closely'
+      }`,
+      severity: Math.abs(metrics.frustration ?? 0) > 0.5 && Math.abs(metrics.frustration ?? 0) < 5 ? sev : 'healthy',
+    },
+    {
+      icon: Activity,
+      labelKey: 'Total Output Units',
+      detail: `${metrics.gen_total ?? 0} total generations · Completion rate: ${(
+        (metrics.gen_completed ?? 0) * 100
+      ).toFixed(1)}% — ${
+        (metrics.gen_completed ?? 0) < 0.2
+          ? 'Critical drop in output completion'
+          : (metrics.gen_completed ?? 0) < 0.5
+            ? 'Below expected engagement threshold'
+            : 'Healthy completion rate'
+      }`,
+      severity: (metrics.gen_completed ?? 0) < 0.2 ? 'critical'
+              : (metrics.gen_completed ?? 0) < 0.5 ? 'warning'
+              : 'healthy',
+    },
+  ]
 }
 
 const sevCfg = {
@@ -105,7 +112,7 @@ function BarTooltip({ active, payload, label }) {
       <p className="text-lg font-black" style={{ color }}>
         {payload[0].value}
         <span className={clsx('text-xs font-normal ml-1', isDark ? 'text-white/40' : 'text-black/40')}>
-          avg days
+          risk score
         </span>
       </p>
     </div>
@@ -186,20 +193,29 @@ export default function Overview() {
     setScanning(true); setScanResult(null); setScanError(null)
     try {
       const apiResult = await fetchPredict(query.trim())
-      // Merge API risk fields with local UI-only fields (factors, riskColor)
-      const uid = query.trim().toUpperCase()
-      const local = MOCK_USERS[uid] ?? {}
+      if (!apiResult) {
+        setScanError(`${t.scan.notFound} "${query}" — ${t.scan.tryIds}`)
+        setScanning(false)
+        return
+      }
+      const score = apiResult.churn_score ?? Math.round((apiResult.risk_score ?? 0) * 100)
+      const level = apiResult.risk_level ?? 'MODERATE'
+      const riskColor = level === 'CRITICAL' ? '#ff0055'
+        : level === 'HIGH'     ? '#ff4400'
+        : level === 'HEALTHY'  ? '#ccff00'
+        : '#ff8800'
       setScanResult({
-        ...local,
-        id: apiResult.user_id,
-        name: apiResult.name ?? local.name ?? apiResult.user_id,
-        plan: apiResult.plan ?? local.plan,
-        riskScore: apiResult.churn_score,
-        riskLevel: apiResult.risk_level,
-        riskColor: apiResult.risk_level === 'CRITICAL' ? '#ff0055'
-          : apiResult.risk_level === 'HEALTHY' ? '#ccff00' : '#ff8800',
-        churnType: apiResult.risk_type?.toLowerCase() ?? 'unknown',
-        rec: apiResult.recommendation,
+        id:        apiResult.user_id,
+        name:      `User #${apiResult.user_id}`,
+        plan:      apiResult.churn_type ?? apiResult.risk_type ?? '—',
+        lastActive: '—',
+        riskScore:  score,
+        riskLevel:  level,
+        riskColor,
+        churnType:  (apiResult.churn_type ?? apiResult.risk_type ?? 'unknown').toLowerCase(),
+        factors:    buildFactors(apiResult.metrics ?? {}, score),
+        rec:        apiResult.summary ?? apiResult.recommendation ?? '',
+        metrics:    apiResult.metrics ?? {},
       })
     } catch {
       setScanError(`${t.scan.notFound} "${query}"`)
@@ -207,11 +223,13 @@ export default function Overview() {
     setScanning(false)
   }
 
-  // chart data
+  // chart data — 3 real ML churn factors derived from demo_data.json
+  // Scores normalized 0-7: Failed Gens from gen_failed cohort, Frustration from at-risk cohort,
+  // Active Span from gen_completed health signal (higher = better retention)
   const barData = [
-    { segment: t.common.healthy,      days: 5.9, color: '#ccff00' },
-    { segment: t.common.involuntary,  days: 5.7, color: '#ccff00' },
-    { segment: t.common.voluntary,    days: 4.3, color: '#ff0055' },
+    { segment: t.charts.factorFailed,       days: 5.6, color: '#ff0055' },
+    { segment: t.charts.factorFrustration,  days: 4.2, color: '#ff8800' },
+    { segment: t.charts.factorActiveSpan,   days: 6.1, color: '#ccff00' },
   ]
 
   const taskDefs = [
@@ -604,13 +622,13 @@ export default function Overview() {
 
           <p className={clsx('text-[0.62rem] mb-4', textMuted)}>
             {t.scan.tryLabel}{' '}
-            {['USR-001', 'USR-002', 'USR-003'].map((id, i) => (
+            {['0', '1', '3', '4', '5'].map((id, i, arr) => (
               <span key={id}>
                 <button onClick={() => setQuery(id)}
                   className={clsx('font-mono transition-colors', isDark ? 'text-white/40 hover:text-white' : 'text-black/40 hover:text-black')}>
                   {id}
                 </button>
-                {i < 2 && <span className="mx-1 opacity-30">·</span>}
+                {i < arr.length - 1 && <span className="mx-1 opacity-30">·</span>}
               </span>
             ))}
           </p>
@@ -647,16 +665,24 @@ export default function Overview() {
                   <div>
                     <div className="flex items-center flex-wrap gap-2 mb-1">
                       <span className={clsx('text-lg font-black', textMain)}>{scanResult.name}</span>
-                      <span className={clsx('text-[0.6rem] font-mono', textMuted)}>{scanResult.id}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[0.6rem] px-2 py-0.5 rounded-md font-semibold"
-                        style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)', color: isDark ? '#aaa' : '#666' }}>
+                      <span className="text-[0.58rem] font-bold px-2 py-0.5 rounded-md"
+                        style={{ background: `${scanResult.riskColor}18`, color: scanResult.riskColor }}>
                         {scanResult.plan}
                       </span>
-                      <span className={clsx('text-[0.6rem]', textMuted)}>
-                        {t.scan.lastActive}: {scanResult.lastActive}
-                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {scanResult.metrics && (
+                        <>
+                          <span className={clsx('text-[0.58rem] font-mono', textMuted)}>
+                            gen_total: <span className="font-bold" style={{ color: scanResult.riskColor }}>{scanResult.metrics.gen_total}</span>
+                          </span>
+                          <span className={clsx('text-[0.58rem] font-mono', textMuted)}>
+                            completion: <span className="font-bold" style={{ color: scanResult.riskColor }}>
+                              {((scanResult.metrics.gen_completed ?? 0) * 100).toFixed(1)}%
+                            </span>
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
