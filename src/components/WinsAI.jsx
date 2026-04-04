@@ -397,6 +397,31 @@ export default function WinsAI() {
             {!minimized && (
               <div className="flex-shrink-0 border-t px-3 py-3"
                 style={{ borderColor: accentAlpha(isDark, 0.1) }}>
+
+                {/* Quick Command Pills */}
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {[
+                    'Analyze User #3 churn risk',
+                    'Show grace period impact',
+                    'Top recovery actions',
+                  ].map((cmd) => (
+                    <button
+                      key={cmd}
+                      onClick={() => handleSend(cmd)}
+                      disabled={thinking}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.55rem] font-bold transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: accentAlpha(isDark, 0.08),
+                        border: `1px solid ${accentAlpha(isDark, 0.22)}`,
+                        color: accent,
+                      }}
+                    >
+                      <Zap size={8} strokeWidth={3} />
+                      {cmd}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex gap-2 items-end">
                   <textarea
                     ref={inputRef}

@@ -46,6 +46,9 @@ export default function Footer() {
             <p className={clsx('text-xs mt-0.5', isDark ? 'text-white/25' : 'text-black/30')}>
               {t.footer.rights}
             </p>
+            <p className={clsx('text-[0.5rem] mt-1.5', isDark ? 'text-white/18' : 'text-black/25')}>
+              Methodology: 3 peer-reviewed papers · Frontiers in AI · Results in Engineering · PLOS ONE
+            </p>
           </div>
 
           {/* GitHub */}

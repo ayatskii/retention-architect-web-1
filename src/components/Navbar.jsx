@@ -1,13 +1,20 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sun, Moon, Menu, X, ChevronDown, Zap } from 'lucide-react'
+import { Sun, Moon, Menu, X, ChevronDown, Zap, Eye, Users, Activity, BarChart2, Layers } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
 import { getAccent, accentFg, accentGlow, accentTextShadow } from '../lib/theme'
 import { clsx } from 'clsx'
 
-const LANGS  = ['EN', 'RU', 'KZ']
-const PAGES  = ['overview', 'diagnostics', 'strategyLab']
+const LANGS = ['EN', 'RU', 'KZ']
+
+const PAGE_CONFIG = [
+  { key: 'overview',    icon: Eye      },
+  { key: 'segments',    icon: Users    },
+  { key: 'diagnostics', icon: Activity },
+  { key: 'model',       icon: BarChart2 },
+  { key: 'strategyLab', icon: Layers   },
+]
 
 export default function Navbar({ activePage, onNavigate }) {
   const { lang, changeLang, t } = useI18n()
@@ -17,20 +24,17 @@ export default function Navbar({ activePage, onNavigate }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [langOpen,   setLangOpen]   = useState(false)
 
-  const label = (p) => ({
-    overview:    t.nav.overview,
-    diagnostics: t.nav.diagnostics,
-    strategyLab: t.nav.strategyLab,
-  }[p] || p)
+  const label = (key) => t.nav[key] || key
 
-  const navBtn = (page, onClick) => {
-    const active = activePage === page
+  const navBtn = (cfg) => {
+    const active = activePage === cfg.key
+    const Icon   = cfg.icon
     return (
       <button
-        key={page}
-        onClick={onClick ?? (() => onNavigate(page))}
+        key={cfg.key}
+        onClick={() => onNavigate(cfg.key)}
         className={clsx(
-          'relative px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap',
+          'relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap',
           active
             ? ''
             : isDark
@@ -39,7 +43,8 @@ export default function Navbar({ activePage, onNavigate }) {
         )}
         style={active ? { background: accent, color: fg, boxShadow: accentGlow(isDark) } : {}}
       >
-        {label(page)}
+        <Icon size={14} strokeWidth={active ? 2.5 : 2} />
+        {label(cfg.key)}
       </button>
     )
   }
@@ -57,12 +62,11 @@ export default function Navbar({ activePage, onNavigate }) {
       )}>
         <div className="relative max-w-screen-xl mx-auto px-4 md:px-6 flex items-center h-16">
 
-          {/* ── Left: Brand ── */}
+          {/* ── Brand ── */}
           <button
             onClick={() => onNavigate('overview')}
             className="flex items-center gap-2.5 flex-shrink-0 z-10"
           >
-            {/* Pulsing icon */}
             <div className="wins-logo-pulse w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: accent }}>
               <Zap size={15} color={fg} strokeWidth={3} />
@@ -75,15 +79,15 @@ export default function Navbar({ activePage, onNavigate }) {
             </span>
           </button>
 
-          {/* ── Center: Nav links (absolute center) ── */}
-          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-            {PAGES.map(p => navBtn(p))}
+          {/* ── Nav links (centered, desktop) ── */}
+          <nav className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2">
+            {PAGE_CONFIG.map(cfg => navBtn(cfg))}
           </nav>
 
           {/* ── Spacer ── */}
           <div className="flex-1" />
 
-          {/* ── Right: Controls ── */}
+          {/* ── Right controls ── */}
           <div className="hidden md:flex items-center gap-2 z-10">
 
             {/* Language switcher */}
@@ -98,8 +102,7 @@ export default function Navbar({ activePage, onNavigate }) {
                 )}
               >
                 {lang}
-                <ChevronDown size={12}
-                  className={clsx('transition-transform duration-200', langOpen && 'rotate-180')} />
+                <ChevronDown size={12} className={clsx('transition-transform duration-200', langOpen && 'rotate-180')} />
               </button>
 
               <AnimatePresence>
@@ -172,6 +175,11 @@ export default function Navbar({ activePage, onNavigate }) {
           </button>
         </div>
 
+        {/* ── Mobile nav links (md only, below lg) ── */}
+        <nav className="hidden md:flex lg:hidden items-center gap-0.5 px-4 pb-2 overflow-x-auto">
+          {PAGE_CONFIG.map(cfg => navBtn(cfg))}
+        </nav>
+
         {/* ── Mobile dropdown ── */}
         <AnimatePresence>
           {mobileOpen && (
@@ -184,21 +192,25 @@ export default function Navbar({ activePage, onNavigate }) {
                 isDark ? 'border-white/[0.06]' : 'border-black/[0.06]')}
             >
               <div className="px-4 py-4 space-y-1">
-                {PAGES.map(page => (
-                  <button
-                    key={page}
-                    onClick={() => { onNavigate(page); setMobileOpen(false) }}
-                    className={clsx(
-                      'w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all',
-                      activePage === page
-                        ? 'text-black'
-                        : isDark ? 'text-white/50' : 'text-black/50',
-                    )}
-                    style={activePage === page ? { background: accent, color: fg } : {}}
-                  >
-                    {label(page)}
-                  </button>
-                ))}
+                {PAGE_CONFIG.map(cfg => {
+                  const Icon = cfg.icon
+                  return (
+                    <button
+                      key={cfg.key}
+                      onClick={() => { onNavigate(cfg.key); setMobileOpen(false) }}
+                      className={clsx(
+                        'w-full text-left flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all',
+                        activePage === cfg.key
+                          ? 'text-black'
+                          : isDark ? 'text-white/50' : 'text-black/50',
+                      )}
+                      style={activePage === cfg.key ? { background: accent, color: fg } : {}}
+                    >
+                      <Icon size={15} strokeWidth={2} />
+                      {label(cfg.key)}
+                    </button>
+                  )
+                })}
 
                 {/* Language + theme row */}
                 <div className="flex items-center gap-2 pt-3 border-t"
@@ -226,8 +238,8 @@ export default function Navbar({ activePage, onNavigate }) {
         </AnimatePresence>
       </header>
 
-      {/* Navbar height offset */}
-      <div className="h-[65px]" />
+      {/* Height offset — taller on md because of the second nav row */}
+      <div className="h-[65px] md:h-[105px] lg:h-[65px]" />
     </>
   )
 }

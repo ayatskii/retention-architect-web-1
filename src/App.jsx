@@ -5,14 +5,18 @@ import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import WinsAI from './components/WinsAI'
-import Overview from './pages/Overview'
+import Overview    from './pages/Overview'
+import Segments    from './pages/Segments'
 import Diagnostics from './pages/Diagnostics'
+import Model       from './pages/Model'
 import StrategyLab from './pages/StrategyLab'
 import { clsx } from 'clsx'
 
 const pages = {
   overview:    Overview,
+  segments:    Segments,
   diagnostics: Diagnostics,
+  model:       Model,
   strategyLab: StrategyLab,
 }
 

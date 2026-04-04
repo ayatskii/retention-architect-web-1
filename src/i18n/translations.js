@@ -2,9 +2,11 @@ export const translations = {
   // ═══════════════════════════════════════════════
   EN: {
     nav: {
-      brand: 'WINS',
-      overview: 'Overview',
+      brand:       'WINS',
+      overview:    'Overview',
+      segments:    'Segments',
       diagnostics: 'Diagnostics',
+      model:       'Model',
       strategyLab: 'Strategy Lab',
     },
 
@@ -198,9 +200,11 @@ export const translations = {
   // ═══════════════════════════════════════════════
   RU: {
     nav: {
-      brand: 'WINS',
-      overview: 'Обзор',
+      brand:       'WINS',
+      overview:    'Обзор',
+      segments:    'Сегменты',
       diagnostics: 'Диагностика',
+      model:       'Модель',
       strategyLab: 'Лаборатория',
     },
 
@@ -392,9 +396,11 @@ export const translations = {
   // ═══════════════════════════════════════════════
   KZ: {
     nav: {
-      brand: 'WINS',
-      overview: 'Шолу',
+      brand:       'WINS',
+      overview:    'Шолу',
+      segments:    'Сегменттер',
       diagnostics: 'Диагностика',
+      model:       'Модель',
       strategyLab: 'Зертхана',
     },
 

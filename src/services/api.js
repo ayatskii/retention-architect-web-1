@@ -166,6 +166,133 @@ export async function consultAI({ message, metrics = null, lang = 'EN', history 
   }
 }
 
+// ── fetchClusters ─────────────────────────────────────────────────
+/**
+ * Fetch 150 scatter-plot cluster points from /clusters.
+ * Falls back to a minimal mock when backend is unreachable.
+ *
+ * @param {string} period  '7d' | '30d' | '90d'
+ * @returns {Promise<Object>}  { points, period, total, axes, clusters }
+ */
+export async function fetchClusters(period = '30d') {
+  try {
+    const res = await fetchWithTimeout(`${BASE_URL}/clusters?period=${period}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch {
+    console.warn('[api] Backend unavailable — using mock clusters')
+    // Minimal mock: 5 anchor points only
+    const anchors = [
+      { x: 198, y: 0.1962, gen_failed: 0.0558, risk_score: 0.85, cluster: 'Technical',  anchor: true,  user_id: '0' },
+      { x: 198, y: 13.49,  gen_failed: 0.0039, risk_score: 0.15, cluster: 'Healthy',    anchor: true,  user_id: '1' },
+      { x: 199, y: 0.7229, gen_failed: 0.0021, risk_score: 0.92, cluster: 'Voluntary',  anchor: true,  user_id: '3' },
+      { x: 199, y: 0.9910, gen_failed: 0.0043, risk_score: 0.45, cluster: 'Voluntary',  anchor: true,  user_id: '4' },
+      { x: 67,  y: -0.41,  gen_failed: 0.0045, risk_score: 0.78, cluster: 'Voluntary',  anchor: true,  user_id: '5' },
+    ]
+    return {
+      points: anchors,
+      period,
+      total: anchors.length,
+      axes: { x: { field: 'gen_total', label: 'Total Activity' }, y: { field: 'frustration', label: 'User Frustration Index' } },
+      clusters: {
+        Healthy:   { color: '#ccff00' },
+        Voluntary: { color: '#ff0055' },
+        Technical: { color: '#ffcc00' },
+      },
+      _mock: true,
+    }
+  }
+}
+
+// ── fetchShap ─────────────────────────────────────────────────────
+/**
+ * Fetch SHAP feature contributions for a single user.
+ * @param {string} userId
+ * @returns {Promise<Object|null>}
+ */
+export async function fetchShap(userId) {
+  const uid = userId.trim()
+  try {
+    const res = await fetchWithTimeout(`${BASE_URL}/predict/${encodeURIComponent(uid)}/shap`)
+    if (res.status === 404) return null
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch {
+    console.warn('[api] Backend unavailable — using mock SHAP for', uid)
+    // Minimal mock fallback
+    return {
+      user_id:     uid,
+      base_value:  0.35,
+      output_value: 0.87,
+      features: [
+        { name: 'gen_completed_rate',  value: 0.08,  contribution:  0.22 },
+        { name: 'gen_failed_rate',     value: 0.056, contribution:  0.15 },
+        { name: 'frustration_index',   value: 0.72,  contribution:  0.11 },
+        { name: 'days_since_last_gen', value: 5,     contribution:  0.05 },
+        { name: 'sub_weekday',         value: 2,     contribution:  0.03 },
+        { name: 'gen_total',           value: 198,   contribution: -0.04 },
+      ],
+      explanation_method: 'SHAP TreeExplainer (mock)',
+      _mock: true,
+    }
+  }
+}
+
+// ── fetchSegments ─────────────────────────────────────────────────
+/**
+ * Fetch K-Means cluster segmentation summary.
+ * @returns {Promise<Object>}  { clusters, method, silhouette_score }
+ */
+export async function fetchSegments() {
+  try {
+    const res = await fetchWithTimeout(`${BASE_URL}/segments`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch {
+    console.warn('[api] Backend unavailable — using mock segments')
+    return {
+      clusters: [
+        { name: 'High-Risk',   churn_rate: 0.42, user_count: 2478, avg_tenure_days: 3.2,  avg_spend: 14.99, dominant_churn_type: 'voluntary',   color: '#ff0055' },
+        { name: 'Medium-Risk', churn_rate: 0.21, user_count: 2586, avg_tenure_days: 8.1,  avg_spend: 14.99, dominant_churn_type: 'mixed',        color: '#ff8800' },
+        { name: 'Low-Risk',    churn_rate: 0.15, user_count: 1979, avg_tenure_days: 13.4, avg_spend: 29.99, dominant_churn_type: 'involuntary',  color: '#ccff00' },
+      ],
+      method: 'Autoencoder + K-Means (k=3)',
+      silhouette_score: 0.35,
+      _mock: true,
+    }
+  }
+}
+
+// ── fetchModelMetrics ─────────────────────────────────────────────
+/**
+ * Fetch full model performance metrics.
+ * @returns {Promise<Object>}
+ */
+export async function fetchModelMetrics() {
+  try {
+    const res = await fetchWithTimeout(`${BASE_URL}/model/metrics`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch {
+    console.warn('[api] Backend unavailable — using mock model metrics')
+    return {
+      accuracy:           0.84,
+      precision:          0.84,
+      recall:             0.84,
+      f1_score:           0.84,
+      auc_roc:            0.932,
+      optimal_threshold:  0.528,
+      model_type:         'XGBoost + LightGBM + GradientBoosting (Soft Voting)',
+      smote_applied:      true,
+      calibration_method: 'isotonic',
+      brier_score:        0.142,
+      training_samples:   5634,
+      test_samples:       1409,
+      _mock: true,
+    }
+  }
+}
+
 // ── checkHealth ───────────────────────────────────────────────────
 /**
  * Ping the backend health endpoint.

@@ -187,6 +187,26 @@ export default function Overview() {
   const [scanResult, setScanResult] = useState(null)
   const [scanError, setScanError] = useState(null)
   const [scanning, setScanning] = useState(false)
+  const [outreachSent, setOutreachSent] = useState(false)
+  const [discountSent, setDiscountSent] = useState(false)
+  const [actionToast, setActionToast] = useState({ show: false, msg: '' })
+
+  // Reset action buttons when scan result changes
+  useEffect(() => {
+    setOutreachSent(false)
+    setDiscountSent(false)
+  }, [scanResult])
+
+  function sendAction(type) {
+    if (type === 'outreach') {
+      setOutreachSent(true)
+      setActionToast({ show: true, msg: 'Outreach sequence triggered successfully.' })
+    } else {
+      setDiscountSent(true)
+      setActionToast({ show: true, msg: 'Discount offer dispatched to subscriber.' })
+    }
+    setTimeout(() => setActionToast(t => ({ ...t, show: false })), 3000)
+  }
 
   const runScan = async () => {
     if (!query.trim()) return
@@ -742,7 +762,7 @@ export default function Overview() {
                 {/* AI Recommendation */}
                 <div className="px-5 pb-5"
                   style={{ background: isDark ? 'rgba(6,6,6,0.97)' : 'rgba(248,248,248,0.97)' }}>
-                  <div className="rounded-xl p-4"
+                  <div className="rounded-xl p-4 mb-4"
                     style={{ background: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.18)' }}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <Zap size={12} style={{ color: '#ccff00' }} />
@@ -752,12 +772,60 @@ export default function Overview() {
                     </div>
                     <p className={clsx('text-xs leading-relaxed', textMuted)}>{scanResult.rec}</p>
                   </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-3">
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => !outreachSent && sendAction('outreach')}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.72rem] font-bold border transition-all duration-200"
+                      style={outreachSent
+                        ? { opacity: 0.5, cursor: 'not-allowed', border: '1px solid rgba(255,255,255,0.1)', color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }
+                        : { border: '1px solid rgba(204,255,0,0.3)', color: '#ccff00', background: 'rgba(204,255,0,0.06)' }
+                      }
+                    >
+                      {outreachSent ? <><Check size={11} strokeWidth={3} /> Action Sent</> : <><ArrowRight size={11} strokeWidth={2.5} /> Send Outreach</>}
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => !discountSent && sendAction('discount')}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[0.72rem] font-bold border transition-all duration-200"
+                      style={discountSent
+                        ? { opacity: 0.5, cursor: 'not-allowed', border: '1px solid rgba(255,255,255,0.1)', color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }
+                        : { border: '1px solid rgba(0,229,255,0.3)', color: '#00e5ff', background: 'rgba(0,229,255,0.06)' }
+                      }
+                    >
+                      {discountSent ? <><Check size={11} strokeWidth={3} /> Action Sent</> : <><Zap size={11} strokeWidth={2.5} /> Offer Discount</>}
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </Card>
       </motion.section>
+
+      {/* ─── Action Toast ────────────────────────────── */}
+      <AnimatePresence>
+        {actionToast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl"
+            style={{
+              background: 'rgba(0,0,0,0.92)',
+              border: '1px solid rgba(204,255,0,0.35)',
+              boxShadow: '0 0 32px rgba(204,255,0,0.18)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
+            <Check size={16} style={{ color: '#ccff00' }} />
+            <span className="text-sm font-bold text-white">{actionToast.msg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

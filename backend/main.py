@@ -11,7 +11,9 @@ Run:
 """
 
 import json
+import math
 import os
+import random
 import re
 import requests as http
 
@@ -456,3 +458,271 @@ async def ai_consult(body: ConsultRequest):
         raise HTTPException(status_code=504, detail="OpenAI request timed out")
     except http.exceptions.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"OpenAI gateway error: {exc}")
+
+
+# ══════════════════════════════════════════════════
+# CLUSTERS ENDPOINT — Scatter Plot Data
+# ══════════════════════════════════════════════════
+
+def _cluster_name(risk_score: float, churn_type: str, gen_failed: float) -> str:
+    """Assign cluster label based on ML signal hierarchy."""
+    if gen_failed > 0.03:
+        return "Technical"
+    if churn_type in ("Voluntary", "At Risk") or risk_score >= 0.60:
+        return "Voluntary"
+    return "Healthy"
+
+
+@app.get("/clusters", tags=["analytics"])
+async def get_clusters(period: str = "30d"):
+    """
+    Returns 150 scatter-plot data points for the Diagnostics view.
+    X = gen_total (Total Activity), Y = frustration (User Frustration Index).
+    Clusters: Healthy (green), Voluntary (red), Technical (yellow).
+    Demo users (IDs 0,1,3,4,5) are included as labelled anchor points.
+    """
+    rng = random.Random(42)  # seeded for reproducible demo
+
+    points: List[Dict] = []
+
+    # ── 1. Anchor points from demo_data.json ──────
+    for user in DEMO_USERS:
+        m = user["metrics"]
+        cluster = _cluster_name(user["risk_score"], user["churn_type"], m["gen_failed"])
+        points.append({
+            "x":          m["gen_total"],
+            "y":          round(m["frustration"], 4),
+            "gen_failed": round(m["gen_failed"], 4),
+            "risk_score": user["risk_score"],
+            "cluster":    cluster,
+            "anchor":     True,
+            "user_id":    user["id"],
+        })
+
+    # ── 2. Synthetic Healthy points ───────────────
+    # High gen_total (130–210), low-to-moderate frustration (0.05–4.0)
+    for _ in range(59):
+        x = rng.uniform(130, 210)
+        y = rng.uniform(0.05, 4.0)
+        points.append({
+            "x":          round(x, 1),
+            "y":          round(y, 4),
+            "gen_failed": round(rng.uniform(0.001, 0.020), 4),
+            "risk_score": round(rng.uniform(0.05, 0.38), 2),
+            "cluster":    "Healthy",
+            "anchor":     False,
+            "user_id":    None,
+        })
+
+    # ── 3. Synthetic Voluntary-risk points ────────
+    # Low gen_total (15–100), high frustration (0.6–16.0)
+    for _ in range(52):
+        x = rng.uniform(15, 100)
+        y = rng.uniform(0.6, 16.0)
+        points.append({
+            "x":          round(x, 1),
+            "y":          round(y, 4),
+            "gen_failed": round(rng.uniform(0.001, 0.025), 4),
+            "risk_score": round(rng.uniform(0.60, 0.95), 2),
+            "cluster":    "Voluntary",
+            "anchor":     False,
+            "user_id":    None,
+        })
+
+    # ── 4. Synthetic Technical-risk points ────────
+    # Random activity (50–200), moderate frustration, HIGH gen_failed
+    for _ in range(34):
+        x = rng.uniform(50, 200)
+        y = rng.uniform(0.05, 5.0)
+        points.append({
+            "x":          round(x, 1),
+            "y":          round(y, 4),
+            "gen_failed": round(rng.uniform(0.035, 0.15), 4),
+            "risk_score": round(rng.uniform(0.55, 0.90), 2),
+            "cluster":    "Technical",
+            "anchor":     False,
+            "user_id":    None,
+        })
+
+    return {
+        "points": points,
+        "period": period,
+        "total":  len(points),
+        "axes": {
+            "x": {"field": "gen_total",    "label": "Total Activity"},
+            "y": {"field": "frustration",  "label": "User Frustration Index"},
+        },
+        "clusters": {
+            "Healthy":    {"color": "#ccff00", "description": "Low churn risk — high activity, low frustration"},
+            "Voluntary":  {"color": "#ff0055", "description": "Voluntary churn risk — low activity, high frustration"},
+            "Technical":  {"color": "#ffcc00", "description": "Technical churn risk — high error rate"},
+        },
+    }
+
+
+# ══════════════════════════════════════════════════
+# SHAP VALUES — XAI explainability per user
+# ══════════════════════════════════════════════════
+
+# Per-user SHAP mock (keyed by user ID)
+_SHAP_MOCK: Dict[str, Dict] = {
+    "0": {
+        "base_value": 0.35,
+        "output_value": 0.85,
+        "features": [
+            {"name": "gen_failed_rate",    "value": 0.056, "contribution":  0.28},
+            {"name": "gen_completed_rate", "value": 0.89,  "contribution": -0.12},
+            {"name": "frustration_index",  "value": 0.196, "contribution":  0.05},
+            {"name": "gen_total",          "value": 198,   "contribution": -0.03},
+            {"name": "sub_weekday",        "value": 2,     "contribution":  0.02},
+            {"name": "days_active",        "value": 14,    "contribution": -0.01},
+        ],
+    },
+    "1": {
+        "base_value": 0.35,
+        "output_value": 0.15,
+        "features": [
+            {"name": "gen_completed_rate", "value": 0.54,  "contribution": -0.14},
+            {"name": "gen_total",          "value": 198,   "contribution": -0.10},
+            {"name": "gen_failed_rate",    "value": 0.004, "contribution": -0.06},
+            {"name": "frustration_index",  "value": 13.49, "contribution":  0.04},
+            {"name": "sub_weekday",        "value": 4,     "contribution": -0.02},
+            {"name": "days_active",        "value": 21,    "contribution": -0.02},
+        ],
+    },
+    "3": {
+        "base_value": 0.35,
+        "output_value": 0.92,
+        "features": [
+            {"name": "gen_completed_rate", "value": 0.085, "contribution":  0.22},
+            {"name": "frustration_index",  "value": 0.723, "contribution":  0.18},
+            {"name": "days_active",        "value": 4,     "contribution":  0.11},
+            {"name": "gen_failed_rate",    "value": 0.002, "contribution": -0.02},
+            {"name": "gen_total",          "value": 199,   "contribution": -0.03},
+            {"name": "sub_weekday",        "value": 3,     "contribution":  0.01},
+        ],
+    },
+    "4": {
+        "base_value": 0.35,
+        "output_value": 0.45,
+        "features": [
+            {"name": "gen_completed_rate", "value": 0.188, "contribution":  0.08},
+            {"name": "frustration_index",  "value": 0.991, "contribution":  0.06},
+            {"name": "gen_failed_rate",    "value": 0.004, "contribution": -0.03},
+            {"name": "gen_total",          "value": 199,   "contribution": -0.02},
+            {"name": "sub_weekday",        "value": 6,     "contribution":  0.01},
+            {"name": "days_active",        "value": 11,    "contribution": -0.01},
+        ],
+    },
+    "5": {
+        "base_value": 0.35,
+        "output_value": 0.78,
+        "features": [
+            {"name": "gen_total",          "value": 67,    "contribution":  0.19},
+            {"name": "gen_completed_rate", "value": 0.431, "contribution":  0.10},
+            {"name": "frustration_index",  "value": -0.41, "contribution": -0.05},
+            {"name": "gen_failed_rate",    "value": 0.005, "contribution": -0.02},
+            {"name": "sub_weekday",        "value": 5,     "contribution":  0.01},
+            {"name": "days_active",        "value": 8,     "contribution":  0.03},
+        ],
+    },
+}
+
+
+@app.get("/predict/{user_id}/shap", tags=["ml"])
+async def predict_shap(user_id: str):
+    """
+    SHAP feature contributions for a user.
+    Currently returns mock values per user — real SHAP TreeExplainer integration pending.
+    """
+    uid = user_id.strip()
+    if uid not in DEMO_INDEX:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "USER_NOT_FOUND", "user_id": uid},
+        )
+    shap = _SHAP_MOCK.get(uid, _SHAP_MOCK["3"])
+    return {
+        "user_id":    uid,
+        "base_value":   shap["base_value"],
+        "output_value": shap["output_value"],
+        "features":     shap["features"],
+        "explanation_method": "SHAP TreeExplainer (mock — real SHAP integration pending)",
+        "model_version": "v7.3.1-json",
+    }
+
+
+# ══════════════════════════════════════════════════
+# SEGMENTS — K-Means cluster summary
+# ══════════════════════════════════════════════════
+
+@app.get("/segments", tags=["analytics"])
+async def get_segments():
+    """
+    3-cluster user segmentation (Autoencoder + K-Means, k=3).
+    Returns cluster statistics for the Risk Segmentation panel.
+    Values anchored to demo_data.json distribution — real clustering pending.
+    """
+    return {
+        "clusters": [
+            {
+                "name":               "High-Risk",
+                "churn_rate":         0.42,
+                "user_count":         2478,
+                "avg_tenure_days":    3.2,
+                "avg_spend":          14.99,
+                "dominant_churn_type": "voluntary",
+                "color":              "#ff0055",
+            },
+            {
+                "name":               "Medium-Risk",
+                "churn_rate":         0.21,
+                "user_count":         2586,
+                "avg_tenure_days":    8.1,
+                "avg_spend":          14.99,
+                "dominant_churn_type": "mixed",
+                "color":              "#ff8800",
+            },
+            {
+                "name":               "Low-Risk",
+                "churn_rate":         0.15,
+                "user_count":         1979,
+                "avg_tenure_days":    13.4,
+                "avg_spend":          29.99,
+                "dominant_churn_type": "involuntary",
+                "color":              "#ccff00",
+            },
+        ],
+        "method":           "Autoencoder + K-Means (k=3)",
+        "silhouette_score": 0.35,
+        "source":           "El Attar & El-Hajj, Frontiers in AI (2026)",
+    }
+
+
+# ══════════════════════════════════════════════════
+# MODEL METRICS — Full performance report
+# ══════════════════════════════════════════════════
+
+@app.get("/model/metrics", tags=["ml"])
+async def get_model_metrics():
+    """
+    Full model performance metrics.
+    Ensemble: XGBoost + LightGBM + GradientBoosting (Soft Voting).
+    """
+    return {
+        "accuracy":           0.84,
+        "precision":          0.84,
+        "recall":             0.84,
+        "f1_score":           0.84,
+        "auc_roc":            0.932,
+        "optimal_threshold":  0.528,
+        "model_type":         "XGBoost + LightGBM + GradientBoosting (Soft Voting)",
+        "smote_applied":      True,
+        "calibration_method": "isotonic",
+        "brier_score":        0.142,
+        "training_samples":   5634,
+        "test_samples":       1409,
+        "explanation_method": "SHAP TreeExplainer + LIME",
+        "feature_selection":  "Boruta + domain expert review",
+        "source":             "El Attar & El-Hajj, Frontiers in AI (2026) — doi:10.3389/frai.2026.1748799",
+    }

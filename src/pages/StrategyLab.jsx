@@ -1,13 +1,90 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock, RefreshCw, BookOpen, Zap, ChevronRight,
   ArrowRight, Brain, MessageSquare, BarChart2, Layers,
   CheckCircle2, Circle, TrendingUp, ShieldCheck, Lock, EyeOff,
+  Download, CheckCheck, Activity,
 } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
 import { clsx } from 'clsx'
+
+// ─── CSV export ───────────────────────────────
+const CSV_ROWS = [
+  ['user_id','risk_score','churn_type','gen_failed','gen_total','frustration','sub_weekday','gen_completed','summary'],
+  ['0','0.85','Involuntary','0.0558','198','0.1962','2','0.8889','Technical churn due to high gen_failed rate.'],
+  ['1','0.15','Healthy','0.0039','198','13.4858','4','0.5389','Loyal power user with high activity.'],
+  ['3','0.92','Voluntary','0.0021','199','0.7229','3','0.0849','Critical churn risk. High frustration index detected.'],
+  ['4','0.45','At Risk','0.0043','199','0.9910','6','0.1883','Medium risk. Engagement dropping.'],
+  ['5','0.78','Voluntary','0.0045','67','-0.4074','5','0.4308','High risk. Sharp decline in total generations.'],
+]
+
+function exportCSV() {
+  const content = CSV_ROWS.map(r => r.join(',')).join('\n')
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'retention_report.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// ─── Toggle switch ────────────────────────────
+function ToggleSwitch({ on, onChange, color = '#ccff00' }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      className="relative flex-shrink-0 w-10 h-5 rounded-full transition-all duration-300 focus:outline-none"
+      style={{
+        background: on ? color : 'rgba(128,128,128,0.2)',
+        boxShadow: on ? `0 0 10px ${color}55` : 'none',
+      }}
+    >
+      <motion.div
+        animate={{ x: on ? 22 : 2 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className="absolute top-0.5 w-4 h-4 rounded-full"
+        style={{ background: on ? '#000' : '#fff' }}
+      />
+    </button>
+  )
+}
+
+// ─── Toast notification ───────────────────────
+function Toast({ show, msg, onDone }) {
+  useEffect(() => {
+    if (!show) return
+    const id = setTimeout(onDone, 3200)
+    return () => clearTimeout(id)
+  }, [show, onDone])
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl"
+          style={{
+            background: 'rgba(0,0,0,0.92)',
+            border: '1px solid rgba(204,255,0,0.35)',
+            boxShadow: '0 0 32px rgba(204,255,0,0.18)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          <CheckCheck size={16} style={{ color: '#ccff00' }} />
+          <span className="text-sm font-bold text-white">{msg}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
 
 // ─── helpers ──────────────────────────────────
 const fadeUp = (delay = 0) => ({
@@ -225,6 +302,24 @@ export default function StrategyLab() {
   const { t } = useI18n()
   const { isDark } = useTheme()
   const [activeCard, setActiveCard] = useState(null)
+  const [approveApplied, setApproveApplied] = useState(false)
+  const [weekDone, setWeekDone] = useState([false, false])
+  const [strategyToggles, setStrategyToggles] = useState({ grace: false, dunning: false, education: false })
+  const [toast, setToast] = useState({ show: false, msg: '' })
+
+  function showToast(msg) { setToast({ show: true, msg }) }
+  function hideToast() { setToast(t => ({ ...t, show: false })) }
+
+  function handleApproveAll() {
+    if (approveApplied) return
+    setApproveApplied(true)
+    setStrategyToggles({ grace: true, dunning: true, education: true })
+    showToast('Retention protocols activated for 1,240 accounts.')
+  }
+
+  function toggleWeek(i) {
+    setWeekDone(prev => prev.map((v, j) => j === i ? !v : v))
+  }
 
   const textMuted = isDark ? 'text-white/40' : 'text-black/40'
   const textMain  = isDark ? 'text-white'    : 'text-black'
@@ -313,6 +408,7 @@ export default function StrategyLab() {
         {cards.map((card, i) => {
           const Icon = card.icon
           const isExpanded = activeCard === card.id
+          const isOn = strategyToggles[card.id]
           return (
             <motion.div key={card.id} {...fadeUp(0.1 + i * 0.1)}>
               <Card accent={card.accent} glowColor={card.accent} className="h-full flex flex-col">
@@ -325,11 +421,34 @@ export default function StrategyLab() {
                       style={{ background: `${card.accent}14`, border: `1px solid ${card.accent}28` }}>
                       <Icon size={18} style={{ color: card.accent }} />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h3 className={clsx('text-base font-black leading-snug', textMain)}>{card.title}</h3>
                       <p className={clsx('text-xs mt-0.5 leading-snug', textMuted)}>{card.sub}</p>
                     </div>
+                    {/* Toggle switch */}
+                    <ToggleSwitch
+                      on={isOn}
+                      color={card.accent}
+                      onChange={(val) => setStrategyToggles(prev => ({ ...prev, [card.id]: val }))}
+                    />
                   </div>
+
+                  {/* Live badge for grace toggle */}
+                  <AnimatePresence>
+                    {card.id === 'grace' && isOn && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
+                        exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[0.62rem] font-bold overflow-hidden"
+                        style={{ background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.22)', color: '#ccff00' }}
+                      >
+                        <Activity size={11} strokeWidth={3} className="animate-pulse" />
+                        Monitoring Live Payments
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Stats row */}
                   <div className="flex gap-2">
@@ -652,38 +771,103 @@ export default function StrategyLab() {
           <div className="absolute right-0 top-0 w-96 h-full opacity-[0.04]"
             style={{ background: 'radial-gradient(ellipse at right, #ccff00, transparent 70%)' }} />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Zap size={16} style={{ color: '#ccff00' }} />
-                <span className="text-[0.6rem] font-bold tracking-[0.2em] uppercase" style={{ color: '#ccff00' }}>
-                  Implementation Timeline
-                </span>
+          <div className="relative z-10">
+            {/* Header row */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap size={16} style={{ color: '#ccff00' }} />
+                  <span className="text-[0.6rem] font-bold tracking-[0.2em] uppercase" style={{ color: '#ccff00' }}>
+                    Implementation Timeline
+                  </span>
+                </div>
+                <h3 className={clsx('text-2xl md:text-3xl font-black leading-tight', textMain)}>
+                  Full deployment in{' '}
+                  <span style={{ color: '#ccff00', textShadow: '0 0 14px rgba(204,255,0,0.4)' }}>14 days</span>
+                </h3>
+                <p className={clsx('text-xs mt-1', textMuted)}>
+                  Grace periods + Dunning active in week 1. Educational sequences live week 2.
+                </p>
               </div>
-              <h3 className={clsx('text-2xl md:text-3xl font-black leading-tight', textMain)}>
-                Full deployment in{' '}
-                <span className="neon-lime" style={{ color: '#ccff00' }}>14 days</span>
-              </h3>
-              <p className={clsx('text-xs mt-1', textMuted)}>
-                Grace periods + Dunning active in week 1. Educational sequences live week 2.
-              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {/* Approve All */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleApproveAll}
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all"
+                  style={approveApplied
+                    ? { background: 'rgba(204,255,0,0.12)', border: '1px solid rgba(204,255,0,0.3)', color: '#ccff00', cursor: 'default' }
+                    : { background: '#ccff00', color: '#000' }}
+                >
+                  {approveApplied
+                    ? <><CheckCheck size={13} strokeWidth={3} /> Applied</>
+                    : <><Zap size={13} strokeWidth={3} /> Approve All Strategies</>
+                  }
+                </motion.button>
+
+                {/* Export CSV */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={exportCSV}
+                  className={clsx(
+                    'flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold border transition-all',
+                    isDark ? 'border-white/15 text-white/60 hover:text-white hover:border-white/30' : 'border-black/15 text-black/60 hover:text-black hover:border-black/30',
+                  )}
+                >
+                  <Download size={13} />
+                  Export Report
+                </motion.button>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button className="btn-lime flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm">
-                <Zap size={13} strokeWidth={3} />
-                Approve All Strategies
-              </button>
-              <button className={clsx(
-                'flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold border transition-all',
-                isDark ? 'border-white/15 text-white/60 hover:text-white hover:border-white/30' : 'border-black/15 text-black/60 hover:text-black hover:border-black/30',
-              )}>
-                <ChevronRight size={13} />
-                Export Report
-              </button>
+
+            {/* Week 1 / Week 2 timeline blocks */}
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              {[
+                { label: 'Week 1', desc: 'Grace Period + Smart Dunning', tasks: ['Deploy grace period logic', 'Configure retry schedules', 'Enable CSM alerts'] },
+                { label: 'Week 2', desc: 'Educational Retention Sequences', tasks: ['Launch feature discovery emails', 'Activate in-app tooltips', 'Go live — full monitoring'] },
+              ].map((week, i) => (
+                <motion.button
+                  key={i}
+                  onClick={() => toggleWeek(i)}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 text-left px-5 py-4 rounded-xl border transition-all duration-200"
+                  style={weekDone[i]
+                    ? { background: 'rgba(204,255,0,0.08)', border: '1px solid rgba(204,255,0,0.3)' }
+                    : { background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                        border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }
+                  }
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[0.6rem] font-bold tracking-widest uppercase"
+                      style={{ color: weekDone[i] ? '#ccff00' : (isDark ? '#555' : '#aaa') }}>
+                      {week.label}
+                    </span>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: weekDone[i] ? '#ccff00' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)') }}>
+                      {weekDone[i]
+                        ? <CheckCircle2 size={12} color="#000" />
+                        : <Circle size={12} style={{ color: isDark ? '#444' : '#ccc' }} />
+                      }
+                    </div>
+                  </div>
+                  <p className={clsx('text-sm font-black leading-snug mb-1.5', textMain)}>{week.desc}</p>
+                  <div className="space-y-0.5">
+                    {week.tasks.map((task, j) => (
+                      <p key={j} className="text-[0.6rem] flex items-center gap-1.5"
+                        style={{ color: weekDone[i] ? '#ccff00' : (isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)') }}>
+                        <span>{weekDone[i] ? '✓' : '·'}</span> {task}
+                      </p>
+                    ))}
+                  </div>
+                </motion.button>
+              ))}
             </div>
           </div>
         </div>
       </motion.div>
+
+      {/* ─── Toast ────────────────────────────────────── */}
+      <Toast show={toast.show} msg={toast.msg} onDone={hideToast} />
     </div>
   )
 }
