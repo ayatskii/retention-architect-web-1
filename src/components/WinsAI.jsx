@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Send, Zap, Trash2, ChevronDown, Bot, User } from 'lucide-react'
+import { X, Send, Zap, Trash2, ChevronDown, Bot, User, ShieldCheck } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
 import { getAccent, accentFg, accentAlpha, accentGlow } from '../lib/theme'
+import { consultAI } from '../services/api'
 import { clsx } from 'clsx'
 
 // ── Typing dots animation ───────────────────────
@@ -129,10 +130,19 @@ function Message({ msg, t, isDark }) {
           </div>
         )}
 
-        {/* Timestamp */}
-        <span className={clsx('text-[0.52rem] px-1', isDark ? 'text-white/20' : 'text-black/25')}>
-          {msg.time}
-        </span>
+        {/* Secure badge + timestamp row */}
+        <div className="flex items-center gap-2">
+          {isAI && msg.secure && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded"
+              style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <ShieldCheck size={8} style={{ color: '#22c55e' }} />
+              <span className="text-[0.46rem] font-bold" style={{ color: '#22c55e' }}>Anonymized</span>
+            </div>
+          )}
+          <span className={clsx('text-[0.52rem] px-1', isDark ? 'text-white/20' : 'text-black/25')}>
+            {msg.time}
+          </span>
+        </div>
       </div>
     </motion.div>
   )
@@ -194,58 +204,25 @@ export default function WinsAI() {
     addMessage({ role: 'user', content: msg })
     setThinking(true)
 
-    // Check for real OpenAI key
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-    const model  = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini'
-    const maxTok = parseInt(import.meta.env.VITE_OPENAI_MAX_TOKENS || '200')
+    // ── Route through Secure AI Gateway (backend /ai/consult) ────
+    const chatHistory = messages
+      .filter(m => !m.isSuggestion)
+      .slice(-6)
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }))
 
-    if (apiKey && apiKey !== 'sk-proj-...') {
-      // ── Real OpenAI call ──────────────────────
-      try {
-        const systemPrompt = `You are Wins AI, an expert retention analytics advisor for a SaaS product.
-          You help Product Managers understand churn patterns, recommend interventions, and analyse user risk.
-          Keep responses concise (2-3 sentences max). Language: ${lang}.`
+    const result = await consultAI({ message: msg, lang, history: chatHistory })
 
-        const history = messages
-          .filter(m => !m.isSuggestion)
-          .slice(-6)
-          .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }))
-
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model,
-            max_tokens: maxTok,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...history,
-              { role: 'user', content: msg },
-            ],
-          }),
-        })
-
-        const data = await res.json()
-        const aiText = data.choices?.[0]?.message?.content || 'I could not process that. Please try again.'
-        addMessage({ role: 'ai', content: aiText, showActions: true })
-      } catch {
-        addMessage({
-          role: 'ai',
-          content: 'API connection failed. Check your VITE_OPENAI_API_KEY in .env.',
-          showActions: false,
-        })
-      }
+    if (result) {
+      // Backend responded (real OpenAI or backend mock)
+      addMessage({ role: 'ai', content: result.reply, showActions: true, secure: result.anonymized })
     } else {
-      // ── Mock response ─────────────────────────
-      await new Promise(r => setTimeout(r, 850 + Math.random() * 400))
+      // Backend offline — use frontend mock responses
+      await new Promise(r => setTimeout(r, 700 + Math.random() * 350))
       const responses = t.ai.mockResponses || []
       const reply = responses[msgIdx % responses.length] ||
         "I've analysed your query. Would you like me to run a deeper diagnostic scan?"
       setMsgIdx(i => i + 1)
-      addMessage({ role: 'ai', content: reply, showActions: true })
+      addMessage({ role: 'ai', content: reply, showActions: true, secure: false })
     }
 
     setThinking(false)
@@ -332,10 +309,25 @@ export default function WinsAI() {
               </div>
 
               {/* Live indicator */}
-              <div className="flex items-center gap-1.5 mr-1">
+              <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full animate-pulse"
                   style={{ background: accent, boxShadow: `0 0 4px ${accent}` }} />
                 <span className="text-[0.52rem] font-bold" style={{ color: accent }}>LIVE</span>
+              </div>
+
+              {/* Secure Shield badge */}
+              <div
+                className="flex items-center gap-1 px-2 py-1 rounded-lg"
+                title={t.ai.anonymized}
+                style={{
+                  background: 'rgba(34,197,94,0.12)',
+                  border: '1px solid rgba(34,197,94,0.25)',
+                }}
+              >
+                <ShieldCheck size={10} style={{ color: '#22c55e' }} />
+                <span className="text-[0.48rem] font-bold tracking-wide" style={{ color: '#22c55e' }}>
+                  {t.ai.secureMode}
+                </span>
               </div>
 
               {/* Controls */}
@@ -433,11 +425,12 @@ export default function WinsAI() {
                     <Send size={14} color={fg} strokeWidth={2.5} />
                   </motion.button>
                 </div>
-                <p className={clsx('text-[0.52rem] mt-2 text-center', isDark ? 'text-white/15' : 'text-black/20')}>
-                  {import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY !== 'sk-proj-...'
-                    ? t.ai.poweredBy
-                    : t.ai.mockApiNote}
-                </p>
+                <div className="flex items-center justify-center gap-1.5 mt-2">
+                  <ShieldCheck size={9} style={{ color: '#22c55e' }} />
+                  <p className={clsx('text-[0.5rem]', isDark ? 'text-white/20' : 'text-black/25')}>
+                    {t.ai.anonymized}
+                  </p>
+                </div>
               </div>
             )}
           </motion.div>

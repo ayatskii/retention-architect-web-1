@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Clock, RefreshCw, BookOpen, Zap, ChevronRight,
   ArrowRight, Brain, MessageSquare, BarChart2, Layers,
-  CheckCircle2, Circle, TrendingUp,
+  CheckCircle2, Circle, TrendingUp, ShieldCheck, Lock, EyeOff,
 } from 'lucide-react'
 import { useI18n } from '../context/I18nContext'
 import { useTheme } from '../context/ThemeContext'
@@ -451,6 +451,189 @@ export default function StrategyLab() {
                   Trigger Manual Re-train
                 </motion.button>
               </div>
+            </div>
+          </div>
+        </Card>
+      </motion.section>
+
+      {/* ═══ Security & Methodology ════════════════════ */}
+      <motion.section {...fadeUp(0.5)}>
+        <Card glowColor="#22c55e" accent="#22c55e">
+          {/* Header */}
+          <div className="p-5 md:p-6 border-b"
+            style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.28)' }}>
+                <ShieldCheck size={18} style={{ color: '#22c55e' }} />
+              </div>
+              <div className="flex-1">
+                <h2 className={clsx('text-xl md:text-2xl font-black', textMain)}>
+                  {s.securityTitle}
+                </h2>
+                <p className={clsx('text-xs mt-0.5', textMuted)}>{s.securitySub}</p>
+              </div>
+
+              {/* Compliance badges */}
+              <div className="hidden sm:flex flex-wrap gap-1.5 justify-end">
+                {[s.securityBadge1, s.securityBadge2, s.securityBadge3, s.securityBadge4].map((badge) => (
+                  <span key={badge}
+                    className="text-[0.52rem] font-bold px-2 py-1 rounded-lg"
+                    style={{
+                      background: 'rgba(34,197,94,0.1)',
+                      border: '1px solid rgba(34,197,94,0.22)',
+                      color: '#22c55e',
+                    }}
+                  >
+                    {badge}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 md:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+              {/* Method 1 — Feature Masking */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 }}
+                className={clsx(
+                  'rounded-xl p-4 flex flex-col gap-3',
+                  isDark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-black/[0.02] border border-black/[0.06]',
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                  <EyeOff size={15} style={{ color: '#22c55e' }} />
+                </div>
+                <div>
+                  <h3 className={clsx('text-sm font-black leading-snug mb-1.5', textMain)}>
+                    {s.securityMethod1Title}
+                  </h3>
+                  <p className={clsx('text-xs leading-relaxed', textMuted)}>
+                    {s.securityMethod1Desc}
+                  </p>
+                </div>
+                {/* Pipeline visual */}
+                <div className="mt-auto pt-3 border-t"
+                  style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {['Raw Data', '→', 'PII Strip', '→', 'Masked Features', '→', 'AI Model'].map((item, i) => (
+                      <span key={i} className={clsx(
+                        'text-[0.5rem] font-bold px-1.5 py-0.5 rounded',
+                        item === '→'
+                          ? (isDark ? 'text-white/20' : 'text-black/25')
+                          : i === 6
+                            ? 'text-black'
+                            : '',
+                      )}
+                        style={
+                          item !== '→'
+                            ? {
+                                background: i === 6 ? '#22c55e' : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                                color: i === 6 ? '#000' : i === 0 ? '#ff5555' : undefined,
+                              }
+                            : {}
+                        }
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Method 2 — Secure AI Gateway */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.63 }}
+                className={clsx(
+                  'rounded-xl p-4 flex flex-col gap-3',
+                  isDark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-black/[0.02] border border-black/[0.06]',
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                  <Lock size={15} style={{ color: '#22c55e' }} />
+                </div>
+                <div>
+                  <h3 className={clsx('text-sm font-black leading-snug mb-1.5', textMain)}>
+                    {s.securityMethod2Title}
+                  </h3>
+                  <p className={clsx('text-xs leading-relaxed', textMuted)}>
+                    {s.securityMethod2Desc}
+                  </p>
+                </div>
+                {/* Architecture diagram */}
+                <div className="mt-auto pt-3 border-t"
+                  style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { label: 'React Frontend', color: '#00ccff' },
+                      { label: '↓ POST /ai/consult', color: isDark ? '#555' : '#aaa' },
+                      { label: 'FastAPI Gateway (anonymize)', color: '#22c55e' },
+                      { label: '↓ Sanitized payload only', color: isDark ? '#555' : '#aaa' },
+                      { label: 'OpenAI API', color: '#ff8800' },
+                    ].map((row, i) => (
+                      <span key={i} className="text-[0.5rem] font-mono font-bold px-2 py-0.5 rounded"
+                        style={{
+                          color: row.color,
+                          background: row.label.startsWith('↓') ? 'transparent' : `${row.color}12`,
+                          border: row.label.startsWith('↓') ? 'none' : `1px solid ${row.color}28`,
+                        }}>
+                        {row.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Method 3 — ML Model Integrity */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.71 }}
+                className={clsx(
+                  'rounded-xl p-4 flex flex-col gap-3',
+                  isDark ? 'bg-white/[0.03] border border-white/[0.06]' : 'bg-black/[0.02] border border-black/[0.06]',
+                )}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
+                  <Brain size={15} style={{ color: '#22c55e' }} />
+                </div>
+                <div>
+                  <h3 className={clsx('text-sm font-black leading-snug mb-1.5', textMain)}>
+                    {s.securityMethod3Title}
+                  </h3>
+                  <p className={clsx('text-xs leading-relaxed', textMuted)}>
+                    {s.securityMethod3Desc}
+                  </p>
+                </div>
+                {/* Features list */}
+                <div className="mt-auto pt-3 border-t"
+                  style={{ borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}>
+                  <p className={clsx('text-[0.5rem] font-bold mb-1.5 uppercase tracking-widest', textMuted)}>
+                    Model inputs (anonymized only)
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {['session_days', 'payment_attempts', 'feature_usage_ratio', 'plan_tier', 'ltv_band', 'cohort_age'].map(f => (
+                      <span key={f} className="text-[0.48rem] font-mono px-1.5 py-0.5 rounded"
+                        style={{
+                          background: 'rgba(34,197,94,0.08)',
+                          border: '1px solid rgba(34,197,94,0.18)',
+                          color: '#22c55e',
+                        }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </Card>

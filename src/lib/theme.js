@@ -9,7 +9,7 @@
  */
 
 export const ACCENT_DARK  = '#ccff00'
-export const ACCENT_LIGHT = '#047857'
+export const ACCENT_LIGHT = '#15803d'
 
 /** Primary accent hex */
 export function getAccent(isDark) {
@@ -26,8 +26,8 @@ export function accentAlpha(isDark, alpha) {
     const a = Math.round(alpha * 255).toString(16).padStart(2, '0')
     return `#ccff00${a}`
   }
-  // Forest green rgb(4, 120, 87)
-  return `rgba(4,120,87,${alpha})`
+  // Forest green rgb(21, 128, 61)
+  return `rgba(21,128,61,${alpha})`
 }
 
 /**
@@ -45,9 +45,9 @@ export function accentGlow(isDark, size = 'md') {
     return glows[size] ?? glows.md
   }
   const glows = {
-    sm: '0 0 6px rgba(4,120,87,0.25)',
-    md: '0 0 10px rgba(4,120,87,0.30)',
-    lg: '0 0 16px rgba(4,120,87,0.40)',
+    sm: '0 0 6px rgba(21,128,61,0.25)',
+    md: '0 0 10px rgba(21,128,61,0.30)',
+    lg: '0 0 16px rgba(21,128,61,0.40)',
   }
   return glows[size] ?? glows.md
 }

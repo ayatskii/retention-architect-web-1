@@ -130,6 +130,36 @@ export async function fetchPredict(userId) {
   }
 }
 
+// ── consultAI ─────────────────────────────────────────────────────
+/**
+ * Call the Secure AI Gateway (POST /ai/consult).
+ * All data is anonymized server-side before reaching OpenAI.
+ *
+ * @param {string}   message   User's question
+ * @param {object}   [metrics] Optional structured metrics context
+ * @param {string}   [lang]    'EN' | 'RU' | 'KZ'
+ * @param {Array}    [history] Previous chat turns [{role, content}]
+ * @returns {Promise<{reply: string, anonymized: boolean, model_used: string}>}
+ */
+export async function consultAI({ message, metrics = null, lang = 'EN', history = [] }) {
+  try {
+    const res = await fetchWithTimeout(
+      `${BASE_URL}/ai/consult`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, metrics, language: lang, history }),
+      },
+      12000, // 12 s — AI calls can be slow
+    )
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } catch {
+    console.warn('[api] AI consult backend unavailable — using frontend mock')
+    return null // caller falls back to local mock responses
+  }
+}
+
 // ── checkHealth ───────────────────────────────────────────────────
 /**
  * Ping the backend health endpoint.
