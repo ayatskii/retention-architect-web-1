@@ -104,7 +104,13 @@ def _load_all() -> None:
         )
 
 
-_load_all()
+# Load models in a background thread so the FastAPI app can start listening
+# (and /health can respond) immediately. Requests arriving before the load
+# finishes will see MODEL_READY=False and fall back to demo_data.json — the
+# exact same graceful path used when the ML stack is unavailable. Once the
+# thread finishes, MODEL_READY flips to True and real predictions resume.
+import threading as _threading
+_threading.Thread(target=_load_all, name="ml-loader", daemon=True).start()
 
 
 # ══════════════════════════════════════════════════
